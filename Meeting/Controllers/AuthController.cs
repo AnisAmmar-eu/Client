@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Authorization; // N'oubliez pas ce using si vous utilisez [Authorize]
 
 namespace Admin.Controllers
 {
@@ -27,7 +28,7 @@ namespace Admin.Controllers
             if (await db.Users.AnyAsync(u => u.Email == model.Email))
                 return BadRequest("Email already registered.");
 
-            model.Password= HashPassword(model.Password);
+            model.Password = HashPassword(model.Password);
             model.Id = Guid.NewGuid();
             db.Users.Add(model);
             await db.SaveChangesAsync();
@@ -45,6 +46,39 @@ namespace Admin.Controllers
             return Ok(new { token });
         }
 
+        // NOUVEL ENDPOINT POUR LA RECHERCHE D'UTILISATEURS
+        // La route complète sera /api/Auth/users/search
+        [HttpGet("users/search")]
+        // [Authorize] // Décommentez cette ligne si seuls les utilisateurs authentifiés peuvent effectuer la recherche
+        public async Task<IActionResult> SearchUsers([FromQuery] string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+   
+                return Ok(new List<User>());
+           
+            }
+
+        
+            var users = await db.Users
+                                .Where(u => u.Email.Contains(query) || u.FullName.Contains(query)) 
+                                .Select(u => new
+                                {
+                                    u.Id,
+                                    u.Email,
+                                    u.FullName
+                                })
+                                .ToListAsync();
+
+            if (!users.Any())
+            {
+                return NotFound("No users found matching the query.");
+            }
+
+            return Ok(users);
+        }
+
+
         private string HashPassword(string password)
         {
             using var sha = SHA256.Create();
@@ -52,5 +86,4 @@ namespace Admin.Controllers
             return Convert.ToBase64String(bytes);
         }
     }
-
 }

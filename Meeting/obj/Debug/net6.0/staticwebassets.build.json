@@ -1,12 +1,11 @@
 {
   "Version": 1,
-  "Hash": "HYy1r8u2hGH/sLSFLdugC/pKgqqwjqrxi1fSjD88THo=",
+  "Hash": "xCfgwuyEv3XKyfopXYrPHQLn2/b/AOd5VaWJGW6OjzQ=",
   "Source": "Meeting",
   "BasePath": "_content/Meeting",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
   "DiscoveryPatterns": [],
-  "Assets": [],
-  "Endpoints": []
+  "Assets": []
 }

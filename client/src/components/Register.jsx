@@ -71,7 +71,7 @@ const Register = () => {
         {success && <div className="success-message">{success}</div>} {/* Message de succès */}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-           <label htmlFor="email">
+            <label htmlFor="email">
               <svg viewBox="0 0 24 24" fill="currentColor" className="icon">
                 <path d="M12 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-10c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
               </svg>
@@ -122,8 +122,15 @@ const Register = () => {
             {loading ? 'Inscription...' : 'S\'inscrire'}
           </button>
         </form>
-        <div className="options">
-          <p>Déjà un compte? <a href="/login">Se connecter</a></p> {/* Lien vers la page de connexion */}
+        <div className="register-redirect">
+          <p>Déjà un compte? </p>
+          <button
+            className="register-button"
+            onClick={() => window.location.href = '/login'}
+          >
+            Se connecter
+          </button>
+
         </div>
       </div>
     </div>

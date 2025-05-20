@@ -16,7 +16,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<ProjectDashboard />} />
+          <Route path="/project" element={<ProjectDashboard />} />
            <Route path="/meetings" element={<MeetingDashboard />} />
             <Route path="/tasks" element={<TaskDashboard />} />
             <Route path="/archive" element={<ArchiveDashboard />} /> {/* <-- Nouvelle route pour l'archive */}

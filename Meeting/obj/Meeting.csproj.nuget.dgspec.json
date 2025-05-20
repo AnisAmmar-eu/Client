@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\A N I S\\Desktop\\NET\\Meeting\\Meeting\\Meeting.csproj": {}
+    "C:\\Users\\Anis\\doc\\Client\\Meeting\\Meeting.csproj": {}
   },
   "projects": {
-    "C:\\Users\\A N I S\\Desktop\\NET\\Meeting\\Meeting\\Meeting.csproj": {
+    "C:\\Users\\Anis\\doc\\Client\\Meeting\\Meeting.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\A N I S\\Desktop\\NET\\Meeting\\Meeting\\Meeting.csproj",
+        "projectUniqueName": "C:\\Users\\Anis\\doc\\Client\\Meeting\\Meeting.csproj",
         "projectName": "Meeting",
-        "projectPath": "C:\\Users\\A N I S\\Desktop\\NET\\Meeting\\Meeting\\Meeting.csproj",
-        "packagesPath": "C:\\Users\\A N I S\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\A N I S\\Desktop\\NET\\Meeting\\Meeting\\obj\\",
+        "projectPath": "C:\\Users\\Anis\\doc\\Client\\Meeting\\Meeting.csproj",
+        "packagesPath": "C:\\Users\\Anis\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Anis\\doc\\Client\\Meeting\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\A N I S\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\Anis\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -26,6 +22,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -38,13 +35,7 @@
           "warnAsError": [
             "NU1605"
           ]
-        },
-        "restoreAuditProperties": {
-          "enableAudit": "true",
-          "auditLevel": "low",
-          "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.200"
+        }
       },
       "frameworks": {
         "net6.0": {
@@ -92,7 +83,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.401\\RuntimeIdentifierGraph.json"
         }
       }
     }

@@ -30,8 +30,8 @@ const TaskDashboard = () => {
       fetchMeetingsForProject(selectedProjectId);
     } else {
       setMeetings([]);
-      setTasks([]); // Clear tasks if no project selected
-      setSelectedMeetingId(''); // Clear selected meeting
+      setTasks([]); 
+      setSelectedMeetingId(''); 
     }
   }, [selectedProjectId]);
 
@@ -47,7 +47,7 @@ const TaskDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/Project');
+      const response = await fetch('https://localhost:7212/api/Project/projects');
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
@@ -68,7 +68,7 @@ const TaskDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`/api/Meeting/project/${projectId}`);
+      const response = await fetch(`https://localhost:7212/api/Meeting/project/${projectId}`);
       if (response.ok) {
         const data = await response.json();
         setMeetings(data);
@@ -89,7 +89,7 @@ const TaskDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`/api/Task/meeting/${meetingId}`);
+      const response = await fetch(`/https://localhost:7212/api/Task/meeting/${meetingId}`);
       if (response.ok) {
         const data = await response.json();
         setTasks(data);
@@ -131,7 +131,7 @@ const TaskDashboard = () => {
         meetingId: selectedMeetingId,
       };
 
-      const response = await fetch('/api/Task', {
+      const response = await fetch('https://localhost:7212/api/Task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

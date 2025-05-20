@@ -1,15 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Meeting.Data;
+using Meeting.Models;
+using Meeting.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using System; // Assurez-vous que System est inclus pour Guid
 
 namespace Admin.Controllers
 {
-    using Meeting.Data;
-    using Meeting.Models;
-    using Meeting.Services;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
-
-
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -27,32 +25,62 @@ namespace Admin.Controllers
         [HttpGet("project/{projectId}")]
         public async Task<IActionResult> GetMeetings(Guid projectId)
         {
-            var meetings = await _db.Meetings
-                .Include(m => m.Template)
-                .Where(m => m.ProjectId == projectId)
-                .ToListAsync();
+            try
+            {
+                var meetings = await _db.Meetings
+                    .Include(m => m.Template) // Gardez ceci pour inclure le template s'il existe
+                    .Where(m => m.ProjectId == projectId)
+                    .ToListAsync();
 
-            return Ok(meetings);
+                // Solution la plus probable pour l'erreur 500 : Configuration du sérialiseur JSON.
+                // Si vous utilisez System.Text.Json (par défaut dans .NET 6+), ajoutez ceci à Program.cs / Startup.cs:
+                // services.AddControllers().AddJsonOptions(options =>
+                // {
+                //     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                //     // options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; // Bonne pratique
+                // });
+                // Si vous utilisez Newtonsoft.Json, configurez-le pour ignorer les boucles de référence.
+
+                return Ok(meetings);
+            }
+            catch (Exception ex)
+            {
+                // Retourne un message d'erreur plus détaillé pour le débogage
+                return StatusCode(500, $"Erreur serveur : {ex.Message} - StackTrace: {ex.StackTrace}");
+            }
         }
+
 
         [HttpPost]
         public async Task<IActionResult> CreateMeeting([FromBody] Meetings meeting)
         {
             meeting.Id = Guid.NewGuid();
 
-            // Verify project exists
+            // Vérifier que le projet existe
             var projectExists = await _db.Projects.AnyAsync(p => p.Id == meeting.ProjectId);
-            if (!projectExists) return BadRequest("Project does not exist");
+            if (!projectExists)
+            {
+                return BadRequest("Project does not exist");
+            }
 
-            // Verify template exists
-            var templateExists = await _db.Templates.AnyAsync(t => t.Id == meeting.TemplateId);
-            if (!templateExists) return BadRequest("Template does not exist");
+            // **MODIFICATION ICI : Rendre la vérification du template optionnelle**
+            if (meeting.TemplateId.HasValue) // Vérifie si un TemplateId a été fourni
+            {
+                var templateExists = await _db.Templates.AnyAsync(t => t.Id == meeting.TemplateId.Value);
+                if (!templateExists)
+                {
+                    return BadRequest("Provided Template does not exist");
+                }
+            }
+            // Si meeting.TemplateId.HasValue est faux, cela signifie que TemplateId est null,
+            // et nous n'avons pas besoin de vérifier s'il existe dans la DB.
 
             _db.Meetings.Add(meeting);
             await _db.SaveChangesAsync();
 
             return Ok(meeting);
         }
+
         [HttpPost("{meetingId}/invite")]
         public async Task<IActionResult> InviteParticipants(Guid meetingId, [FromBody] List<Guid> participantUserIds)
         {
@@ -76,7 +104,5 @@ namespace Admin.Controllers
 
             return Ok("Invitations envoyées.");
         }
-
     }
-
 }

@@ -1,11 +1,48 @@
+/* Variables de couleurs - Les mêmes que ProjectDashboard.css, MeetingDashboard.css et TaskDashboard.css pour la cohérence */
+:root {
+  /* Couleurs de fond principales */
+  --bg-primary: #2c3e50; /* Bleu-gris profond, moins noir */
+  --bg-secondary: rgba(44, 62, 80, 0.7); /* Pour les panneaux, avec opacité */
+  --bg-tertiary: rgba(44, 62, 80, 0.5); /* Pour les sections, avec plus d'opacité */
+  --bg-active-item: rgba(52, 152, 219, 0.2); /* Bleu clair avec opacité pour l'actif */
+  --bg-hover-item: rgba(52, 152, 219, 0.1); /* Bleu clair avec opacité pour le survol */
+
+  /* Couleurs de texte */
+  --text-primary: #ecf0f1; /* Blanc cassé pour le texte principal */
+  --text-secondary: #bdc3c7; /* Gris clair pour le texte secondaire/labels */
+  --text-active: #ffffff; /* Blanc pur pour le texte actif */
+
+  /* Couleurs des accents et des actions (boutons, bordures actives) */
+  --accent-blue: #3498db; /* Bleu vif pour les actions primaires */
+  --accent-blue-hover: #2980b9; /* Bleu plus foncé au survol */
+  --accent-active-tab: #4a90e2; /* Un bleu légèrement plus clair pour les onglets actifs */
+
+  /* Couleurs des bordures et séparateurs (plus clairs) */
+  --border-light: rgba(255, 255, 255, 0.15); /* Bordure générale */
+  --border-lighter: rgba(255, 255, 255, 0.08); /* Bordure plus légère pour les détails */
+  --border-dashed: rgba(255, 255, 255, 0.04); /* Bordure pointillée légère */
+
+  /* Couleurs de priorité (peuvent rester car elles sont déjà vives) */
+  --priority-low: #2ecc71; /* Vert émeraude */
+  --priority-normal: #3498db; /* Bleu vif */
+  --priority-high: #f39c12; /* Orange citrouille */
+  --priority-urgent: #e74c3c; /* Rouge corail */
+
+  /* Messages */
+  --error-color: #e74c3c;
+  --error-bg: rgba(231, 76, 60, 0.2);
+  --success-color: #27ae60;
+  --success-bg: rgba(39, 174, 96, 0.2);
+}
+
 /* Réutilisation des styles de base du dashboard */
 .archive-dashboard-container {
-  background-color: #1a1a2e;
+  background-color: var(--bg-primary);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #e0e0e0;
+  color: var(--text-primary);
   width: 100%;
 }
 
@@ -14,10 +51,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--bg-secondary);
   backdrop-filter: blur(5px);
   padding: 10px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-light);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   z-index: 100;
 }
@@ -29,7 +66,7 @@
 .tab-button {
   background: none;
   border: none;
-  color: #ccc;
+  color: var(--text-secondary);
   padding: 10px 15px;
   margin-right: 5px;
   cursor: pointer;
@@ -39,25 +76,31 @@
 }
 
 .tab-button:hover:not(.active) {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background-color: var(--bg-hover-item);
+  color: var(--text-active);
 }
 
 .tab-button.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background-color: var(--accent-active-tab);
+  color: var(--text-active);
   font-weight: bold;
 }
 
 .add-tab {
   font-size: 1.2rem;
   padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+.add-tab:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-active);
 }
 
 .user-settings .icon-button {
   background: none;
   border: none;
-  color: #ccc;
+  color: var(--text-secondary);
   font-size: 1.2rem;
   margin-left: 15px;
   cursor: pointer;
@@ -65,7 +108,7 @@
 }
 
 .user-settings .icon-button:hover {
-  color: #fff;
+  color: var(--text-active);
 }
 
 /* Main Content Layout */
@@ -77,19 +120,19 @@
 /* Left Panel - Archive Tree */
 .left-panel {
   flex: 0 0 280px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-secondary);
   backdrop-filter: blur(3px);
   padding: 20px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid var(--border-light);
   overflow-y: auto;
 }
 
 .left-panel h3 {
-  color: #eee;
+  color: var(--text-primary);
   margin-top: 0;
   margin-bottom: 15px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-lighter);
 }
 
 .archived-list {
@@ -101,62 +144,63 @@
 .archived-list li {
   padding: 10px 10px;
   margin-bottom: 5px;
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--bg-active-item); /* Utilise la variable pour le fond des éléments */
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-  color: #ccc;
+  color: var(--text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .archived-list li:hover:not(.active) {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background-color: var(--bg-hover-item);
+  color: var(--text-active);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .archived-list li.active {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--accent-blue); /* Couleur principale pour l'élément actif */
+  color: var(--text-active);
   font-weight: bold;
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4); /* Ombre cohérente avec le bleu */
 }
 
 .archived-list li strong {
     display: block;
     font-size: 1.1em;
     margin-bottom: 3px;
+    color: var(--text-active); /* Texte principal plus vif */
 }
 
 .archived-list li .archive-date {
     font-size: 0.85em;
-    color: #bbb;
+    color: var(--text-secondary);
 }
 
 /* Right Panel - Content Area (Details) */
 .right-panel {
   flex-grow: 1;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--bg-tertiary);
   padding: 30px;
   overflow-y: auto;
 }
 
 .archive-details-section {
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: var(--bg-secondary);
   backdrop-filter: blur(3px);
   padding: 25px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-light);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .archive-title {
-  color: #eee;
+  color: var(--text-primary);
   margin-top: 0;
   margin-bottom: 25px;
   font-size: 1.8rem;
   font-weight: bold;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-light);
   padding-bottom: 15px;
 }
 
@@ -172,30 +216,30 @@
 
 .detail-label {
   font-weight: bold;
-  color: #ccc;
-  width: 120px; /* Aligner les labels */
+  color: var(--text-secondary);
+  width: 120px;
   flex-shrink: 0;
 }
 
 .detail-value {
-  color: #fff;
+  color: var(--text-active);
   flex-grow: 1;
 }
 
 .detail-block {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.05); /* Utilise une légère opacité de blanc pour un effet glassmorphism plus clair */
     border-radius: 5px;
     padding: 15px;
     margin-top: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-lighter);
 }
 
 .detail-block h5 {
-    color: #eee;
+    color: var(--text-primary);
     margin-top: 0;
     margin-bottom: 15px;
     padding-bottom: 5px;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    border-bottom: 1px dashed var(--border-lighter);
     font-size: 1.1rem;
 }
 
@@ -208,7 +252,7 @@
 
 .document-list li {
     padding: 8px 0;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+    border-bottom: 1px dashed var(--border-dashed); /* Bordure très légère et pointillée */
     display: flex;
     align-items: center;
 }
@@ -218,19 +262,19 @@
 }
 
 .document-list li .pdf-icon {
-    color: #dc3545; /* Rouge pour PDF */
+    color: var(--error-color); /* Utilise la couleur rouge d'erreur pour les icônes PDF, vive et cohérente */
     margin-right: 8px;
     font-size: 1.2em;
 }
 
 .document-list li a {
-    color: #007bff;
+    color: var(--accent-blue); /* Liens en bleu vif */
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
 .document-list li a:hover {
-    color: #0056b3;
+    color: var(--accent-blue-hover);
     text-decoration: underline;
 }
 
@@ -243,49 +287,49 @@
 }
 
 .entry-item {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--bg-active-item); /* Fond léger pour les entrées, plus gai */
     padding: 12px;
     border-radius: 5px;
     margin-bottom: 10px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    border-left: 3px solid #6c757d; /* Simple border for entries */
+    border-left: 3px solid var(--accent-blue); /* Utilise le bleu d'accent pour la bordure des entrées */
     display: flex;
-    flex-wrap: wrap; /* Permet aux éléments de passer à la ligne */
-    gap: 5px 15px; /* Espace entre les éléments */
+    flex-wrap: wrap;
+    gap: 5px 15px;
 }
 
 .entry-item span {
     font-size: 0.9em;
-    color: #ccc;
+    color: var(--text-secondary);
 }
 
 .entry-item .entry-id {
     font-weight: bold;
-    color: #fff;
-    flex-basis: 30px; /* Petite largeur fixe */
+    color: var(--text-active);
+    flex-basis: 30px;
 }
 
 .entry-item .entry-text {
-    flex-basis: calc(100% - 150px); /* Prend la majorité de l'espace */
+    flex-basis: calc(100% - 150px);
     font-size: 1em;
-    color: #fff;
+    color: var(--text-active);
 }
 
 .entry-item .entry-responsible {
     font-style: italic;
-    color: #aaa;
+    color: var(--text-secondary);
 }
 
 .entry-item .entry-start-date,
 .entry-item .entry-due-date {
     font-size: 0.85em;
-    color: #999;
+    color: var(--text-secondary);
 }
 
 .entry-item .entry-notes {
-    width: 100%; /* Prend toute la largeur si présent */
+    width: 100%;
     font-size: 0.8em;
-    color: #888;
+    color: var(--text-secondary);
     margin-top: 5px;
 }
 
@@ -298,9 +342,9 @@
 
 .linked-list li {
     padding: 5px 0;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+    border-bottom: 1px dashed var(--border-dashed);
     font-size: 0.9em;
-    color: #ccc;
+    color: var(--text-secondary);
 }
 
 .linked-list li:last-child {
@@ -308,7 +352,7 @@
 }
 
 .linked-list li a {
-    color: #007bff;
+    color: var(--accent-blue); /* Liens en bleu vif */
     text-decoration: none;
 }
 
@@ -318,7 +362,7 @@
 
 /* Common messages */
 .loading-message, .no-items-message, .no-results, .hint-message {
-  color: #ccc;
+  color: var(--text-secondary);
   text-align: center;
   margin-top: 15px;
   font-style: italic;
@@ -326,21 +370,21 @@
 }
 
 .error-message {
-  color: #ff6b6b;
+  color: var(--error-color);
   margin-bottom: 15px;
   padding: 10px;
-  border: 1px solid #ffaaaa;
-  background-color: rgba(255, 107, 107, 0.2);
+  border: 1px solid var(--error-color);
+  background-color: var(--error-bg);
   border-radius: 5px;
   font-weight: bold;
 }
 
 .success-message {
-  color: #28a745;
+  color: var(--success-color);
   margin-bottom: 15px;
   padding: 10px;
-  border: 1px solid #c3e6cb;
-  background-color: rgba(40, 167, 69, 0.2);
+  border: 1px solid var(--success-color);
+  background-color: var(--success-bg);
   border-radius: 5px;
   font-weight: bold;
 }

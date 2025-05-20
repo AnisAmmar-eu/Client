@@ -1,5 +1,31 @@
+/* Variables de couleurs - Pour cohérence avec les autres pages */
+:root {
+  /* Couleurs de fond principales */
+  --bg-primary: #2c3e50;
+  --bg-secondary: rgba(44, 62, 80, 0.7);
+  --bg-input: rgba(255, 255, 255, 0.15); /* Fond des inputs */
+  --bg-button: #3498db; /* Bleu vif pour les boutons */
+
+  /* Couleurs de texte */
+  --text-primary: #ecf0f1;
+  --text-secondary: #bdc3c7;
+  --text-input: #ffffff;
+
+  /* Couleurs des accents */
+  --accent-blue: #3498db;
+  --accent-blue-hover: #2980b9;
+
+  /* Messages */
+  --error-color: #e74c3c;
+  --error-bg: rgba(231, 76, 60, 0.2);
+  --success-color: #27ae60;
+  --success-bg: rgba(39, 174, 96, 0.2);
+  
+  --border-radius: 5px; /* Bordure arrondie commune */
+}
+
 .login-container {
-  background-color: #222; /* Fond sombre */
+  background-color: var(--bg-primary);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,19 +34,19 @@
 }
 
 .login-form {
-  background-color: rgba(0, 0, 0, 0.6); /* Fond semi-transparent pour l'effet "verre" */
+  background-color: var(--bg-secondary);
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   width: 100%;
   max-width: 400px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .login-form h2 {
   text-align: center;
   margin-bottom: 30px;
-  color: #eee;
+  color: var(--text-primary);
 }
 
 .form-group {
@@ -30,7 +56,7 @@
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #ccc;
+  color: var(--text-secondary);
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -40,23 +66,35 @@
   width: 20px;
   height: 20px;
   margin-right: 10px;
-  fill: #bbb;
+  fill: #bbb; /* Garde la couleur de l'icône */
 }
 
 .form-group input[type='text'],
-.form-group input[type='password'] {
+.form-group input[type='password'],
+.form-group input[type='email'] { /* Ajout de input[type='email'] pour être complet */
   width: calc(100% - 20px);
   padding: 12px;
   border: none;
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border-radius: var(--border-radius);
+  background-color: var(--bg-input);
+  color: var(--text-input);
   font-size: 16px;
+  outline: none; /* Retirer l'outline par défaut pour uniformiser */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Ajout de transition */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Légère ombre interne */
 }
 
 .form-group input::placeholder {
   color: #aaa;
 }
+
+.form-group input[type='text']:focus,
+.form-group input[type='password']:focus,
+.form-group input[type='email']:focus {
+  background-color: rgba(255, 255, 255, 0.25); /* Légèrement plus clair au focus */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); /* Ajout d'une légère ombre au focus */
+}
+
 
 .form-options {
   display: flex;
@@ -64,7 +102,7 @@
   align-items: center;
   margin-bottom: 20px;
   font-size: 14px;
-  color: #bbb;
+  color: var(--text-secondary);
 }
 
 .form-options label {
@@ -86,54 +124,55 @@
 }
 
 button[type='submit'] {
-  background-color: #007bff;
-  color: #fff;
+  background-color: var(--bg-button);
+  color: var(--text-primary);
   padding: 14px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   cursor: pointer;
   font-size: 16px;
   width: 100%;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Ajout ombre */
 }
 
 button[type='submit']:hover {
   background-color: #0056b3;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Ajout d'une légère ombre au hover */
 }
 
 button[type='submit']:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .error-message {
-  color: #ff6b6b;
+  color: var(--error-color);
   margin-bottom: 15px;
   padding: 10px;
   border: 1px solid #ffaaaa;
   background-color: #ffe0e0;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
 }
 
 .success-message {
-  color: #28a745; /* Couleur verte pour le succès */
+  color: var(--success-color);
   margin-bottom: 15px;
   padding: 10px;
   border: 1px solid #c3e6cb;
-  background-color: #d4edda;
-  border-radius: 5px;
+  background-color: var(--success-bg);
+  border-radius: var(--border-radius);
 }
-
-/* Assurez-vous que les styles existants pour .error-message, les champs input, les boutons, etc., s'appliquent bien. */
 
 .options p {
-    margin: 0;
-    text-align: center; /* Centre le texte si besoin */
-}
-.register-redirect {
-  margin-top: 25px; /* Espace au-dessus du texte et du bouton */
+  margin: 0;
   text-align: center;
-  color: #ccc;
+}
+
+.register-redirect {
+  margin-top: 25px;
+  text-align: center;
+  color: var(--text-secondary);
 }
 
 .register-redirect p {
@@ -141,29 +180,19 @@ button[type='submit']:disabled {
 }
 
 .register-button {
-  display: inline-block; /* Pour pouvoir appliquer padding et margin */
-  background-color: #6c757d; /* Couleur secondaire, par exemple un gris */
-  color: white;
+  display: inline-block;
+  background-color: #6c757d;
+  color: var(--text-primary);
   padding: 10px 15px;
   border: none;
-  border-radius: 5px;
-  text-decoration: none; /* Enlève le soulignement par défaut du lien */
+  border-radius: var(--border-radius);
+  text-decoration: none;
   font-size: 15px;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Ajout ombre */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .register-button:hover {
-  background-color: #5a6268; /* Couleur plus foncée au survol */
-}
-.form-group input[type='email'] { /* Ajoutez ceci si vous ne l'avez pas déjà pour être explicite */
-  width: calc(100% - 20px); /* Pour laisser de l'espace pour le padding */
-  padding: 12px;
-  border: none; /* Pas de bordure par défaut */
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.1); /* Fond semi-transparent */
-  color: #fff; /* Texte blanc */
-  font-size: 16px;
-  /* Ajoutez des styles pour le focus si vous voulez un effet au clic */
-  outline: none; /* Retire le contour bleu par défaut au focus */
-  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transition douce */
+  background-color: #5a6268;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }

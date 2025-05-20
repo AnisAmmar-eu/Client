@@ -15,34 +15,51 @@ const ProjectDashboard = () => {
 
     const navigate = useNavigate();
 
+    // obtenir token d'auth
     const getAuthToken = () => localStorage.getItem('authToken');
 
+    // Vérifie l'auth
     useEffect(() => {
-        fetchProjects();
-    }, []);
+        const token = getAuthToken();
+        if (!token) {
+            // Si pas de token, redirige vers la page de connexion
+            navigate('/login');
+        } else {
+            fetchProjects();
+        }
+    }, [navigate]);
 
     const fetchProjects = async () => {
         setLoading(true);
         setError('');
         const token = getAuthToken();
 
+        if (!token) {
+            setError('Non autorisé : connectez-vous pour accéder aux projets.');
+            setLoading(false);
+            navigate('/login');
+            return;
+        }
+
         try {
             const response = await fetch('https://localhost:7212/api/Project/projects', {
                 headers: {
-                    // Envoi le token si dispo, sinon pas d'authorization header
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
             if (response.ok) {
                 const data = await response.json();
-                setProjects(data);
-                if (data.length > 0) {
-                    setSelectedProjectId(data[0].id);
+                // Assurez-vous que data.$values existe si c'est un format de réponse JSON par défaut de .NET
+                setProjects(data.$values || data);
+                if ((data.$values || data).length > 0) {
+                    setSelectedProjectId((data.$values || data)[0].id);
                 }
             } else if (response.status === 401) {
-                setError("Non autorisé : connectez-vous pour accéder aux projets.");
-                setProjects([]);
+                // Si le token est invalide ou expiré
+                setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
+                localStorage.removeItem('authToken');
+                navigate('/login');
             } else {
                 setError('Erreur lors de la récupération des projets.');
             }
@@ -64,6 +81,7 @@ const ProjectDashboard = () => {
         if (!token) {
             setError('Vous devez être connecté pour créer un projet.');
             setLoading(false);
+            navigate('/login'); // Redirige si pas de token
             return;
         }
 
@@ -86,9 +104,11 @@ const ProjectDashboard = () => {
             if (response.ok) {
                 setSuccess('Projet créé avec succès !');
                 setNewProjectName('');
-                fetchProjects();
+                fetchProjects(); // Rafraîchit la liste des projets
             } else if (response.status === 401) {
-                setError('Non autorisé : connectez-vous pour créer un projet.');
+                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                localStorage.removeItem('authToken');
+                navigate('/login');
             } else {
                 const errorText = await response.text();
                 setError(`Erreur lors de la création du projet: ${errorText}`);
@@ -104,16 +124,49 @@ const ProjectDashboard = () => {
     const handleSearchUsers = async () => {
         setLoading(true);
         setError('');
-        // Simule une recherche utilisateur (remplace par ta vraie API)
-        const dummyUsers = [
-            { id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', email: 'alice@example.com' },
-            { id: 'f0e9d8c7-b6a5-4321-fedc-ba9876543210', email: 'bob@example.com' },
-            { id: '1a2b3c4d-5e6f-7890-abcd-ef1234567890', email: 'christian.lackner@example.com' },
-            { id: '7e8f9a0b-1c2d-3e4f-5a6b-7c8d9e0f1a2b', email: 'test@example.com' },
-        ];
-        setSearchResults(dummyUsers.filter(user => user.email.toLowerCase().includes(searchQuery.toLowerCase())));
-        setLoading(false);
+        const token = getAuthToken(); // Obtenir le token pour la recherche d'utilisateurs
+
+        if (!token) {
+            setError('Vous devez être connecté pour rechercher des utilisateurs.');
+            setLoading(false);
+            navigate('/login');
+            return;
+        }
+
+        if (!searchQuery.trim()) {
+            setError('Veuillez entrer un terme de recherche pour les utilisateurs.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://localhost:7212/api/Auth/users/search?query=${searchQuery}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setSearchResults(data.$values || data || []); // Adaptez si votre API retourne un format différent
+            } else if (response.status === 401) {
+                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                const errorText = await response.text();
+                setError(`Erreur lors de la recherche des utilisateurs: ${errorText}`);
+                setSearchResults([]); // Vide les résultats en cas d'erreur
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur.');
+            console.error('Search users error:', err);
+            setSearchResults([]);
+        } finally {
+            setLoading(false);
+        }
     };
+
 
     const handleAddParticipant = async (e) => {
         e.preventDefault();
@@ -125,6 +178,7 @@ const ProjectDashboard = () => {
         if (!token) {
             setError('Vous devez être connecté pour ajouter un participant.');
             setLoading(false);
+            navigate('/login'); // Redirige si pas de token
             return;
         }
 
@@ -145,7 +199,9 @@ const ProjectDashboard = () => {
             if (response.ok) {
                 setSuccess('Participant ajouté avec succès !');
             } else if (response.status === 401) {
-                setError('Non autorisé : connectez-vous pour ajouter un participant.');
+                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                localStorage.removeItem('authToken');
+                navigate('/login');
             } else {
                 const errorText = await response.text();
                 setError(`Erreur lors de l'ajout du participant: ${errorText}`);
@@ -158,11 +214,18 @@ const ProjectDashboard = () => {
         }
     };
 
+    // Nouvelle fonction pour la déconnexion
+    const handleLogout = () => {
+        localStorage.removeItem('authToken'); // Supprime le token du stockage local
+        navigate('/login'); // Redirige l'utilisateur vers la page de connexion
+    };
+
     return (
         <div className="project-dashboard-container">
             <div className="top-bar">
                 <div className="menu-tabs">
-                    <button className="tab-button active" >Initiate</button>
+                    {/* Les boutons de navigation peuvent être des Links de react-router-dom */}
+                    <button className="tab-button active">Initiate</button>
                     <button className="tab-button">Meetings</button>
                     <button className="tab-button">Tasks</button>
                     <button className="tab-button">Archive</button>
@@ -171,6 +234,10 @@ const ProjectDashboard = () => {
                 <div className="user-settings">
                     <button className="icon-button"><i className="fas fa-search"></i></button>
                     <button className="icon-button"><i className="fas fa-cog"></i></button>
+                    {/* Bouton de déconnexion ajouté ici */}
+                    <button className="icon-button" onClick={handleLogout} title="Déconnexion">
+                        <i className="fas fa-sign-out-alt"></i> {/* Icône de déconnexion (Font Awesome) */}
+                    </button>
                     <button className="icon-button"><i className="fas fa-question-circle"></i></button>
                 </div>
             </div>
@@ -211,7 +278,7 @@ const ProjectDashboard = () => {
                             <button type="submit" disabled={loading || !getAuthToken()}>
                                 {loading ? 'Création...' : 'Créer le projet'}
                             </button>
-                            {!getAuthToken() && <p>Connectez-vous pour créer un projet.</p>}
+                            {!getAuthToken() && <p className="auth-hint">Connectez-vous pour créer un projet.</p>}
                         </form>
                     </div>
 
@@ -233,7 +300,7 @@ const ProjectDashboard = () => {
                             </div>
 
                             <div className="form-group search-user-group">
-                                <label htmlFor="searchUser">Rechercher un utilisateur (Email)</label>
+                                <label htmlFor="searchUser">Rechercher un utilisateur</label>
                                 <input
                                     type="text"
                                     id="searchUser"
@@ -257,7 +324,7 @@ const ProjectDashboard = () => {
                                         <option value="">-- Choisir un utilisateur --</option>
                                         {searchResults.map((user) => (
                                             <option key={user.id} value={user.id}>
-                                                {user.email}
+                                                {user.email} {user.userName ? `(${user.userName})` : ''} {/* Affiche l'email et le nom d'utilisateur s'il existe */}
                                             </option>
                                         ))}
                                     </select>
@@ -271,7 +338,7 @@ const ProjectDashboard = () => {
                             <button type="submit" disabled={loading || !selectedProjectId || !selectedUserIdToAdd || !getAuthToken()}>
                                 {loading ? 'Ajout...' : 'Ajouter le participant'}
                             </button>
-                            {!getAuthToken() && <p>Connectez-vous pour ajouter un participant.</p>}
+                            {!getAuthToken() && <p className="auth-hint">Connectez-vous pour ajouter un participant.</p>}
                         </form>
                     </div>
                 </div>

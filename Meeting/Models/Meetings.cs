@@ -10,8 +10,8 @@ namespace Meeting.Models
 
         public DateTime Date { get; set; }
         public string Location { get; set; } = "";
-        public Guid TemplateId { get; set; }
-        public Template Template { get; set; }
+        public Guid? TemplateId { get; set; }
+        public Template? Template { get; set; }
 
         public ICollection<TaskItem> Tasks { get; set; }
     }

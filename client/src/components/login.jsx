@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import './Login.css';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const handleUsernameChange = (event) => {
     setUsername(event.target.value);
@@ -26,20 +28,25 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://localhost:7212/api/Auth/login', { // Remplacez par l'URL de votre API de connexion
+      const response = await fetch('https://localhost:7212/api/Auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: username, password }), // Adaptez les noms de champs si nécessaire
+        body: JSON.stringify({ email: username, password }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        // Stockez le token ou les informations d'authentification reçues
-        localStorage.setItem('authToken', data.token); // Exemple de stockage de token
-        // Redirigez l'utilisateur vers la page souhaitée après la connexion
-        window.location.href = '/dashboard'; // Exemple de redirection
+        console.log('Login successful! API response data:', data); // See what API returns
+        if (data && data.token) { // Ensure 'data' and 'data.token' exist
+          localStorage.setItem('authToken', data.token);
+          console.log('authToken stored in localStorage:', localStorage.getItem('authToken')); // Verify storage
+          navigate('/project');
+        } else {
+          console.error('API response missing token:', data);
+          setError('Login successful, but token not received.');
+        }
       } else if (response.status === 401) {
         setError('Nom d\'utilisateur ou mot de passe incorrect.');
       } else {
@@ -107,9 +114,9 @@ const Login = () => {
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
-        <div className="register-redirect"> {/* Nouvelle section pour le bouton d'inscription */}
+        <div className="register-redirect">
           <p>Pas encore de compte ?</p>
-          <Link to="/register" className="register-button">S'inscrire ici</Link> {/* Bouton de redirection */}
+          <Link to="/register" className="register-button">S'inscrire ici</Link>
         </div>
       </div>
     </div>
