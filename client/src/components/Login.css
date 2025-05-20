@@ -1,0 +1,169 @@
+.login-container {
+  background-color: #222; /* Fond sombre */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-form {
+  background-color: rgba(0, 0, 0, 0.6); /* Fond semi-transparent pour l'effet "verre" */
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+  color: #fff;
+}
+
+.login-form h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #eee;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #ccc;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.form-group .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  fill: #bbb;
+}
+
+.form-group input[type='text'],
+.form-group input[type='password'] {
+  width: calc(100% - 20px);
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 16px;
+}
+
+.form-group input::placeholder {
+  color: #aaa;
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #bbb;
+}
+
+.form-options label {
+  display: flex;
+  align-items: center;
+}
+
+.form-options input[type='checkbox'] {
+  margin-right: 5px;
+}
+
+.form-options a {
+  color: #8ac4ff;
+  text-decoration: none;
+}
+
+.form-options a:hover {
+  text-decoration: underline;
+}
+
+button[type='submit'] {
+  background-color: #007bff;
+  color: #fff;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+button[type='submit']:hover {
+  background-color: #0056b3;
+}
+
+button[type='submit']:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ffaaaa;
+  background-color: #ffe0e0;
+  border-radius: 5px;
+}
+
+.success-message {
+  color: #28a745; /* Couleur verte pour le succès */
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #c3e6cb;
+  background-color: #d4edda;
+  border-radius: 5px;
+}
+
+/* Assurez-vous que les styles existants pour .error-message, les champs input, les boutons, etc., s'appliquent bien. */
+
+.options p {
+    margin: 0;
+    text-align: center; /* Centre le texte si besoin */
+}
+.register-redirect {
+  margin-top: 25px; /* Espace au-dessus du texte et du bouton */
+  text-align: center;
+  color: #ccc;
+}
+
+.register-redirect p {
+  margin-bottom: 15px;
+}
+
+.register-button {
+  display: inline-block; /* Pour pouvoir appliquer padding et margin */
+  background-color: #6c757d; /* Couleur secondaire, par exemple un gris */
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none; /* Enlève le soulignement par défaut du lien */
+  font-size: 15px;
+  transition: background-color 0.3s ease;
+}
+
+.register-button:hover {
+  background-color: #5a6268; /* Couleur plus foncée au survol */
+}
+.form-group input[type='email'] { /* Ajoutez ceci si vous ne l'avez pas déjà pour être explicite */
+  width: calc(100% - 20px); /* Pour laisser de l'espace pour le padding */
+  padding: 12px;
+  border: none; /* Pas de bordure par défaut */
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.1); /* Fond semi-transparent */
+  color: #fff; /* Texte blanc */
+  font-size: 16px;
+  /* Ajoutez des styles pour le focus si vous voulez un effet au clic */
+  outline: none; /* Retire le contour bleu par défaut au focus */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transition douce */
+}
