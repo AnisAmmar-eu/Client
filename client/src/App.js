@@ -10,6 +10,7 @@ import './App.css';
 import DashboardHome from './components/DashboardHome';
 import MainLayout from './components/MainLayout';
 import ArchiveDashboard from './components/ArchiveDashboard';
+import IntroPanel from './components/IntroPanel';
 
 function App() {
   return (
@@ -23,7 +24,7 @@ function App() {
         <Route element={<MainLayout />}>
           {/* Redirect from root to /dashboard if logged in */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardHome />} />
+          <Route path="/dashboard" element={<IntroPanel />} />
           <Route path="/projects" element={<ProjectDashboard />} />
           <Route path="/meetings" element={<MeetingDashboard />} />
           <Route path="/tasks" element={<TaskDashboard />} />

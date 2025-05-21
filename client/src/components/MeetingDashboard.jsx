@@ -1,19 +1,100 @@
 // src/components/MeetingsDashboard.js
-import React, { useState, useEffect } from 'react';
-import './MeetingDashboard.css'; // Corrected to MeetingsDashboard.css
+import React, { useState, useEffect, useRef } from 'react';
+import './MeetingDashboard.css';
 import { useNavigate } from 'react-router-dom';
+
+// Custom Checkbox Dropdown Component
+const CheckboxDropdown = ({ label, options, selectedValues, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    const handleToggle = () => {
+        setIsOpen(!isOpen);
+    };
+
+    const handleCheckboxChange = (e) => {
+        const { value, checked } = e.target;
+        let newSelectedValues;
+        if (checked) {
+            newSelectedValues = [...selectedValues, value];
+        } else {
+            newSelectedValues = selectedValues.filter(id => id !== value);
+        }
+        onChange(newSelectedValues);
+    };
+
+    const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            setIsOpen(false);
+        }
+    };
+
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const getDisplayValue = () => {
+        if (selectedValues.length === 0) {
+            return `Sélectionner ${label}`;
+        } else if (selectedValues.length === options.length) {
+            return `Tous les ${label}`;
+        } else {
+            const selectedNames = selectedValues
+                .map(id => {
+                    const option = options.find(opt => opt.id === id);
+                    return option ? option.fullName : ''; // Assuming 'fullName' for users
+                })
+                .filter(name => name !== '');
+            return selectedNames.join(', ');
+        }
+    };
+
+    return (
+        <div className="checkbox-dropdown" ref={dropdownRef}>
+            <div className="dropdown-header" onClick={handleToggle}>
+                {getDisplayValue()}
+                <span className="dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
+            </div>
+            {isOpen && (
+                <div className="dropdown-list">
+                    {options.length === 0 ? (
+                        <div className="dropdown-item disabled">Aucun {label.toLowerCase()} disponible</div>
+                    ) : (
+                        options.map(option => (
+                            <label key={option.id} className="dropdown-item">
+                                <input
+                                    type="checkbox"
+                                    value={option.id}
+                                    checked={selectedValues.includes(option.id)}
+                                    onChange={handleCheckboxChange}
+                                />
+                                {option.fullName} ({option.email})
+                            </label>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 const MeetingsDashboard = () => {
     const [meetings, setMeetings] = useState([]);
     const [projects, setProjects] = useState([]);
+    const [users, setUsers] = useState([]);
     const [selectedProjectId, setSelectedProjectId] = useState('');
     const [newMeetingData, setNewMeetingData] = useState({
         title: '',
         description: '',
         date: '',
         time: '',
-        projectId: '' // Ensure this is initialized, will be updated by fetchProjects
+        projectId: ''
     });
+    const [selectedParticipantIds, setSelectedParticipantIds] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -27,42 +108,38 @@ const MeetingsDashboard = () => {
             navigate('/login');
         } else {
             fetchProjects();
+            fetchUsers();
         }
     }, [navigate]);
 
     useEffect(() => {
-        // Only fetch meetings if a projectId is selected and there are projects
         if (selectedProjectId) {
             fetchMeetings(selectedProjectId);
         } else if (projects.length > 0) {
-            // If projects are loaded but no specific project is selected (e.g., initial load)
-            // default to the first project to display some meetings
             setSelectedProjectId(projects[0].id);
             setNewMeetingData(prev => ({ ...prev, projectId: projects[0].id }));
             fetchMeetings(projects[0].id);
         } else {
-            setMeetings([]); // Clear meetings if no project is selected or available
+            setMeetings([]);
         }
-    }, [selectedProjectId, projects]); // Added projects to dependency array to react to project fetch
+    }, [selectedProjectId, projects]);
 
     const fetchProjects = async () => {
         setLoading(true);
         setError('');
         const token = getAuthToken();
         try {
-            const response = await fetch('https://localhost:7212/api/Project/projects', { // Fetch all projects user is part of
+            const response = await fetch('https://localhost:7212/api/Project/projects', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
                 const data = await response.json();
-                const fetchedProjects = data.$values || data; // Handle both $values and direct array
+                const fetchedProjects = data.$values || data;
                 setProjects(fetchedProjects);
                 if (fetchedProjects.length > 0) {
-                    // Set both the filter and the new meeting form to the first project
                     setSelectedProjectId(fetchedProjects[0].id);
                     setNewMeetingData(prev => ({ ...prev, projectId: fetchedProjects[0].id }));
                 } else {
-                    // No projects available, clear selections
                     setSelectedProjectId('');
                     setNewMeetingData(prev => ({ ...prev, projectId: '' }));
                 }
@@ -81,6 +158,33 @@ const MeetingsDashboard = () => {
         }
     };
 
+    const fetchUsers = async () => {
+        setLoading(true);
+        setError('');
+        const token = getAuthToken();
+        try {
+            const response = await fetch('https://localhost:7212/api/Project/users', { // Assuming this is your user endpoint
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setUsers(data.$values || data);
+            } else if (response.status === 401) {
+                setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                setError('Erreur lors de la récupération des utilisateurs.');
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur lors de la récupération des utilisateurs.');
+            console.error('Fetch users error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     const fetchMeetings = async (projectId) => {
         setLoading(true);
         setError('');
@@ -91,14 +195,12 @@ const MeetingsDashboard = () => {
             });
             if (response.ok) {
                 const data = await response.json();
-                // Filter out archived meetings from the display list
                 setMeetings((data.$values || data).filter(m => !m.isArchived));
             } else if (response.status === 401) {
                 setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
-                // If response status is 404 for no meetings, it's not an error but just no data
                 if (response.status === 404) {
                     setMeetings([]);
                 } else {
@@ -116,6 +218,10 @@ const MeetingsDashboard = () => {
     const handleNewMeetingChange = (e) => {
         const { name, value } = e.target;
         setNewMeetingData(prevData => ({ ...prevData, [name]: value }));
+    };
+
+    const handleParticipantChange = (selectedValues) => {
+        setSelectedParticipantIds(selectedValues);
     };
 
     const handleCreateMeeting = async (e) => {
@@ -161,6 +267,12 @@ const MeetingsDashboard = () => {
             });
 
             if (response.ok) {
+                const createdMeeting = await response.json();
+
+                if (selectedParticipantIds.length > 0) {
+                    await sendMeetingInvitations(createdMeeting.id, selectedParticipantIds);
+                }
+
                 setNewMeetingData(prev => ({
                     ...prev,
                     title: '',
@@ -168,7 +280,9 @@ const MeetingsDashboard = () => {
                     date: '',
                     time: ''
                 }));
-                fetchMeetings(selectedProjectId); // Refresh meetings for current project
+                setSelectedParticipantIds([]);
+                fetchMeetings(selectedProjectId);
+                setSuccess('Réunion planifiée avec succès!'); // Add a success message here
             } else if (response.status === 401) {
                 setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
@@ -192,7 +306,39 @@ const MeetingsDashboard = () => {
         }
     };
 
-    // MODIFIED FUNCTION: handleArchiveMeeting (no confirmation)
+    const sendMeetingInvitations = async (meetingId, participantIds) => {
+        setLoading(true);
+        setError('');
+        const token = getAuthToken();
+
+        try {
+            const response = await fetch(`https://localhost:7212/api/Meeting/${meetingId}/invite`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(participantIds)
+            });
+
+            if (response.ok) {
+                setSuccess(prev => prev + ' Invitations envoyées aux participants.');
+            } else if (response.status === 401) {
+                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                const errorText = await response.text();
+                setError(`Erreur lors de l'envoi des invitations: ${errorText}`);
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur lors de l\'envoi des invitations.');
+            console.error('Send invitations error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleArchiveMeeting = async (meetingId, meetingTitle) => {
         setLoading(true);
         setError('');
@@ -215,8 +361,8 @@ const MeetingsDashboard = () => {
             });
 
             if (response.ok) {
-                // Remove the archived meeting from the current list
                 setMeetings(prevMeetings => prevMeetings.filter(m => m.id !== meetingId));
+                setSuccess(`Réunion "${meetingTitle}" archivée avec succès.`);
             } else if (response.status === 401) {
                 setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
@@ -274,8 +420,12 @@ const MeetingsDashboard = () => {
                         )}
                         {meetings.map(meeting => (
                             <div key={meeting.id} className="meeting-card glassy-card">
-                                <h4 className="meeting-title">{meeting.title}</h4> {/* Added title display */}
+                                <h4 className="meeting-title">{meeting.title}</h4>
+                                <p className="meeting-description">{meeting.description}</p>
                                 <div className="meeting-details">
+                                    <span className="detail-item">
+                                        <i className="fas fa-calendar-alt"></i> {new Date(meeting.date).toLocaleDateString()}
+                                    </span>
                                     <span className="detail-item">
                                         <i className="fas fa-clock"></i> {new Date(meeting.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
@@ -312,7 +462,7 @@ const MeetingsDashboard = () => {
                                     value={newMeetingData.projectId}
                                     onChange={handleNewMeetingChange}
                                     required
-                                    disabled={projects.length === 0} // Disable if no projects are loaded
+                                    disabled={projects.length === 0}
                                 >
                                     <option value="">-- Choisir un projet --</option>
                                     {projects.map(project => (
@@ -365,9 +515,19 @@ const MeetingsDashboard = () => {
                                     required
                                 />
                             </div>
+                            <div className="form-group">
+                                <label>Inviter des participants (optionnel)</label>
+                                <CheckboxDropdown
+                                    label="Participants"
+                                    options={users}
+                                    selectedValues={selectedParticipantIds}
+                                    onChange={handleParticipantChange}
+                                />
+                                {users.length === 0 && !loading && <p className="hint-message">Aucun utilisateur à inviter.</p>}
+                            </div>
                             <button
                                 type="submit"
-                                disabled={loading || !getAuthToken() || projects.length === 0 || !newMeetingData.projectId} // Disable if no projects or no projectId selected
+                                disabled={loading || !getAuthToken() || projects.length === 0 || !newMeetingData.projectId}
                                 className="glass-button"
                             >
                                 {loading ? 'Planification...' : 'Planifier la réunion'}

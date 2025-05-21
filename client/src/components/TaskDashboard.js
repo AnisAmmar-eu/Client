@@ -24,9 +24,13 @@ const TaskDashboard = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
+    // *** NOUVEAU: État pour le filtre de tâches ***
+    const [currentFilter, setCurrentFilter] = useState('all'); // 'all', 'today', 'thisWeek', 'urgent', 'assignedToMe'
+
     const navigate = useNavigate();
 
     const getAuthToken = () => localStorage.getItem('authToken');
+    const getUserId = () => localStorage.getItem('userId'); // Assuming you store userId in localStorage
 
     useEffect(() => {
         const token = getAuthToken();
@@ -108,39 +112,40 @@ const TaskDashboard = () => {
         fetchMeetings();
     }, [selectedProjectId, navigate]);
 
-    useEffect(() => {
-        const fetchTasks = async () => {
-            if (!selectedMeetingId) {
-                setTasks([]);
-                return;
+    const fetchTasks = async () => {
+        if (!selectedMeetingId) {
+            setTasks([]);
+            return;
+        }
+        setLoading(true);
+        setError('');
+        const token = getAuthToken();
+        try {
+            const response = await fetch(`https://localhost:7212/api/Task/meeting/${selectedMeetingId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setTasks(data.$values || data);
+            } else if (response.status === 401) {
+                setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                setError('Erreur lors de la récupération des tâches.');
             }
-            setLoading(true);
-            setError('');
-            const token = getAuthToken();
-            try {
-                const response = await fetch(`https://localhost:7212/api/Task/meeting/${selectedMeetingId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setTasks(data.$values || data);
-                } else if (response.status === 401) {
-                    setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
-                    localStorage.removeItem('authToken');
-                    navigate('/login');
-                } else {
-                    setError('Erreur lors de la récupération des tâches.');
-                }
-            } catch (err) {
-                setError('Erreur réseau ou du serveur.');
-                console.error('Fetch tasks error:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
+        } catch (err) {
+            setError('Erreur réseau ou du serveur.');
+            console.error('Fetch tasks error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchTasks();
     }, [selectedMeetingId, navigate]);
+
 
     const handleNewTaskChange = (e) => {
         const { name, value } = e.target;
@@ -175,6 +180,7 @@ const TaskDashboard = () => {
         const taskToCreate = {
             ...newTaskData,
             meetingId: selectedMeetingId,
+            // Ensure dueDate is sent as an ISO string in UTC
             dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate).toISOString() : null,
         };
 
@@ -199,13 +205,7 @@ const TaskDashboard = () => {
                 setSearchQuery('');
                 setSearchResults([]);
                 setSelectedAssignedUserName('');
-                const refreshResponse = await fetch(`https://localhost:7212/api/Task/meeting/${selectedMeetingId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (refreshResponse.ok) {
-                    const refreshedTasks = await refreshResponse.json();
-                    setTasks(refreshedTasks.$values || refreshedTasks);
-                }
+                fetchTasks();
             } else if (response.status === 401) {
                 setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
@@ -274,6 +274,62 @@ const TaskDashboard = () => {
         }
     };
 
+    // *** MODIFIÉ: Fonction de filtrage des tâches pour gérer les fuseaux horaires ***
+    const filterTasks = (tasksToFilter) => {
+        // Get today's date in UTC, set to midnight
+        const now = new Date();
+        const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // Calculate end of the current week in UTC
+        const endOfWeek = new Date(now);
+        endOfWeek.setDate(now.getDate() + (7 - now.getDay())); // Get to Sunday
+        const endOfWeekUtc = Date.UTC(endOfWeek.getFullYear(), endOfWeek.getMonth(), endOfWeek.getDate(), 23, 59, 59, 999);
+
+
+        const currentUserId = getUserId();
+
+        switch (currentFilter) {
+            case 'today':
+                return tasksToFilter.filter(task => {
+                    if (!task.dueDate) return false;
+                    // Parse task due date as UTC date, and get its UTC components
+                    const taskDueDate = new Date(task.dueDate);
+                    const taskDueUtc = Date.UTC(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate());
+                    return taskDueUtc === todayUtc;
+                });
+            case 'thisWeek':
+                return tasksToFilter.filter(task => {
+                    if (!task.dueDate) return false;
+                    const taskDueDate = new Date(task.dueDate);
+                    const taskDueUtc = Date.UTC(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate());
+                    // Check if taskDueUtc is between todayUtc (inclusive) and endOfWeekUtc (inclusive)
+                    return taskDueUtc >= todayUtc && taskDueUtc <= endOfWeekUtc;
+                });
+            case 'urgent':
+                return tasksToFilter.filter(task => task.priority === 'Urgent');
+            case 'assignedToMe':
+                return tasksToFilter.filter(task => task.assignedToUserId === currentUserId);
+            case 'all':
+            default:
+                return tasksToFilter;
+        }
+    };
+
+    const filteredTasks = filterTasks(tasks);
+
+    const toggleUrgentPriority = (taskId) => {
+        setTasks(prevTasks =>
+            prevTasks.map(task =>
+                task.id === taskId
+                    ? { ...task, priority: task.priority === 'Urgent' ? 'Normal' : 'Urgent' }
+                    : task
+            )
+        );
+        // You should ideally send an API request here to persist the priority change.
+        // For example: updateTaskPriority(taskId, newPriority);
+    };
+
+
     return (
         <div className="task-dashboard-container">
             <div className="main-content three-column-layout">
@@ -281,11 +337,21 @@ const TaskDashboard = () => {
                 <div className="left-panel glass-effect">
                     <h3>Smart Lists</h3>
                     <ul className="filter-list custom-list">
-                        <li className="active"><i className="fas fa-inbox"></i> Toutes les tâches</li>
-                        <li><i className="fas fa-calendar-day"></i> Aujourd'hui</li>
-                        <li><i className="fas fa-calendar-week"></i> Cette semaine</li>
-                        <li><i className="fas fa-exclamation-circle"></i> Urgent</li>
-                        <li><i className="fas fa-user-circle"></i> Assigné à moi</li>
+                        <li className={currentFilter === 'all' ? 'active' : ''} onClick={() => setCurrentFilter('all')}>
+                            <i className="fas fa-inbox"></i> Toutes les tâches
+                        </li>
+                        <li className={currentFilter === 'today' ? 'active' : ''} onClick={() => setCurrentFilter('today')}>
+                            <i className="fas fa-calendar-day"></i> Aujourd'hui
+                        </li>
+                        <li className={currentFilter === 'thisWeek' ? 'active' : ''} onClick={() => setCurrentFilter('thisWeek')}>
+                            <i className="fas fa-calendar-week"></i> Cette semaine
+                        </li>
+                        <li className={currentFilter === 'urgent' ? 'active' : ''} onClick={() => setCurrentFilter('urgent')}>
+                            <i className="fas fa-exclamation-circle"></i> Urgent
+                        </li>
+                        <li className={currentFilter === 'assignedToMe' ? 'active' : ''} onClick={() => setCurrentFilter('assignedToMe')}>
+                            <i className="fas fa-user-circle"></i> Assigné à moi
+                        </li>
                     </ul>
                     <h3 className="mt-40">Projets</h3>
                     <div className="project-select-group form-group">
@@ -327,16 +393,30 @@ const TaskDashboard = () => {
 
                 {/* Middle Panel: Task List */}
                 <div className="middle-panel glass-effect">
-                    <h3>Tâches de la réunion ({meetings.find(m => m.id === selectedMeetingId)?.title || 'N/A'})</h3>
+                    <h3>Tâches {
+                        currentFilter === 'all' ? 'de la réunion' :
+                        currentFilter === 'today' ? "d'aujourd'hui" :
+                        currentFilter === 'thisWeek' ? 'de cette semaine' :
+                        currentFilter === 'urgent' ? 'urgentes' :
+                        currentFilter === 'assignedToMe' ? 'qui me sont assignées' : ''
+                    } ({meetings.find(m => m.id === selectedMeetingId)?.title || 'N/A'})</h3>
                     {loading && <p className="loading-message">Chargement des tâches...</p>}
                     {error && <div className="error-message">{error}</div>}
                     <ul className="task-list custom-list">
-                        {tasks.length === 0 && !loading && !error && selectedMeetingId && <p className="no-items-message">Aucune tâche pour cette réunion.</p>}
-                        {tasks.map(task => (
+                        {filteredTasks.length === 0 && !loading && !error && selectedMeetingId && <p className="no-items-message">Aucune tâche pour cette sélection.</p>}
+                        {filteredTasks.map(task => (
                             <li key={task.id} className={`priority-${task.priority.toLowerCase()}`}>
                                 <div className="task-header">
                                     <strong>{task.title}</strong>
-                                    <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>{task.priority}</span>
+                                    <div className="task-actions">
+                                        {/* *** NOUVEAU: icône urgent cliquable *** */}
+                                        <i
+                                            className={`fas fa-exclamation-triangle urgent-icon ${task.priority === 'Urgent' ? 'active' : ''}`}
+                                            onClick={() => toggleUrgentPriority(task.id)}
+                                            title="Basculer la priorité Urgent"
+                                        ></i>
+                                        <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>{task.priority}</span>
+                                    </div>
                                 </div>
                                 <p className="task-description">{task.description}</p>
                                 <div className="task-meta">
@@ -455,7 +535,7 @@ const TaskDashboard = () => {
                             <button type="submit" disabled={loading || !selectedMeetingId || !getAuthToken()} className="glass-button">
                                 {loading ? 'Création...' : 'Créer la tâche'}
                             </button>
-                             {!getAuthToken() && <p className="auth-hint">Connectez-vous pour créer une tâche.</p>}
+                            {!getAuthToken() && <p className="auth-hint">Connectez-vous pour créer une tâche.</p>}
                         </form>
                     </div>
                 </div>

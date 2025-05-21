@@ -125,7 +125,7 @@ body::before {
     width: calc(100% - 30px); /* Ajuster pour padding */
     box-sizing: border-box;
     transition: all var(--transition-fast);
-    font-size: 1em;
+    font-size: 0.88em;
 }
 
 .form-group input::placeholder,

@@ -106,7 +106,10 @@ namespace Meeting.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("DurationInMinutes")
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DurationInMinutes")
                         .HasColumnType("int");
 
                     b.Property<Guid>("MeetingId")

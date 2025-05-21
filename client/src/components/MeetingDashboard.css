@@ -63,8 +63,8 @@
 
 /* Specific form adjustments */
 .form-group.half-width {
-    width: calc(100% - 15px); 
-    display: inline-block;
+    width: calc(100% - 15px); /* Adjusted for gap in flex container if used */
+    display: inline-block; /* Aligns side-by-side */
     vertical-align: top;
 }
 .form-group.half-width:first-of-type {
