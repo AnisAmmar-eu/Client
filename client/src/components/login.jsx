@@ -1,126 +1,87 @@
+// src/components/Login.js
 import React, { useState } from 'react';
-import './Login.css';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
+import '../App.css'; // Pour les styles globaux glassy
+import './Login.css'; // Pour les styles spécifiques au login
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); // Initialize useNavigate
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
-  const handleUsernameChange = (event) => {
-    setUsername(event.target.value);
-  };
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-  const handlePasswordChange = (event) => {
-    setPassword(event.target.value);
-  };
+        try {
+            const response = await fetch('https://localhost:7212/api/Auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
 
-  const handleRememberMeChange = (event) => {
-    setRememberMe(event.target.checked);
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('https://localhost:7212/api/Auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: username, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Login successful! API response data:', data); // See what API returns
-        if (data && data.token) { // Ensure 'data' and 'data.token' exist
-          localStorage.setItem('authToken', data.token);
-          console.log('authToken stored in localStorage:', localStorage.getItem('authToken')); // Verify storage
-          navigate('/project');
-        } else {
-          console.error('API response missing token:', data);
-          setError('Login successful, but token not received.');
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('authToken', data.token); // Store the token
+                // Déclencher un événement de stockage pour informer MainLayout
+                window.dispatchEvent(new Event('storage'));
+                navigate('/dashboard'); // Rediriger vers le tableau de bord
+            } else {
+                const errorData = await response.json();
+                setError(errorData.message || 'Échec de la connexion. Veuillez vérifier vos identifiants.');
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur. Veuillez réessayer.');
+            console.error('Login error:', err);
+        } finally {
+            setLoading(false);
         }
-      } else if (response.status === 401) {
-        setError('Nom d\'utilisateur ou mot de passe incorrect.');
-      } else {
-        setError('Une erreur s\'est produite lors de la connexion.');
-        console.error('Erreur de connexion:', await response.text());
-      }
-    } catch (error) {
-      setError('Impossible de se connecter au serveur.');
-      console.error('Erreur de requête:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  return (
-    <div className="login-container">
-      <div className="login-form">
-        <h2>Se connecter</h2>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="username">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="icon">
-                <path d="M12 4a4 4 0 100 8 4 4 0 000-8zm0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4z" />
-              </svg>
-              Nom d'utilisateur
-            </label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={handleUsernameChange}
-              placeholder="Votre nom d'utilisateur"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="icon">
-                <path d="M12 17a2 2 0 01-2-2 2 2 0 012-2 2 2 0 012 2 2 2 0 01-2 2zm6-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2h-4zm-8 0c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2H6z" />
-              </svg>
-              Mot de passe
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={handlePasswordChange}
-              placeholder="Votre mot de passe"
-              required
-            />
-          </div>
-          <div className="form-options">
-            <label>
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={handleRememberMeChange}
-              />
-              Se souvenir de moi
-            </label>
-            <a href="/forgot-password">Mot de passe oublié?</a>
-          </div>
-          <button type="submit" disabled={loading}>
-            {loading ? 'Connexion...' : 'Se connecter'}
-          </button>
-        </form>
-        <div className="register-redirect">
-          <p>Pas encore de compte ?</p>
-          <Link to="/register" className="register-button">S'inscrire ici</Link>
+    return (
+        <div className="login-container">
+            <div className="login-panel glass-effect">
+                <h2 className="login-title">Bienvenue de Retour</h2>
+                <p className="login-subtitle">Connectez-vous pour accéder à votre espace.</p>
+                {error && <div className="error-message">{error}</div>}
+                <form onSubmit={handleLogin} className="login-form">
+                    <div className="form-group">
+                        <label htmlFor="email">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="votre.email@example.com"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Mot de passe</label>
+                        <input
+                            type="password"
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="********"
+                            required
+                        />
+                    </div>
+                    <button type="submit" disabled={loading} className="glass-button login-button">
+                        {loading ? 'Connexion en cours...' : 'Se connecter'}
+                    </button>
+                </form>
+                <p className="forgot-password-link">
+                    <a href="#" onClick={(e) => { e.preventDefault(); alert('Fonctionnalité de réinitialisation de mot de passe à implémenter.'); }}>Mot de passe oublié ?</a>
+                </p>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Login;

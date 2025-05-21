@@ -1,0 +1,227 @@
+/* src/components/MainLayout.css */
+
+.app-container {
+    display: flex;
+    min-height: 100vh;
+    color: var(--text-color-primary);
+}
+
+.left-navbar {
+    width: 280px; 
+    min-width: 280px;
+    padding: 25px; /* Plus de padding */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: fixed;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    border-right: 1px solid var(--glass-border-color);
+    border-radius: 0;
+    box-shadow: none; /* La navbar a sa propre ombre via .glass-effect */
+}
+
+.navbar-header {
+    text-align: center;
+    margin-bottom: 40px; /* Plus d'espace */
+}
+
+.navbar-header .app-logo {
+    width: 90px; /* Plus grand logo */
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-header h2 {
+    font-size: 1.8em; /* Plus grand titre */
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.nav-item {
+    margin-bottom: 15px; 
+}
+
+.nav-item button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 15px 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-color-primary);
+    font-size: 1.15em; /* Texte plus grand */
+    cursor: pointer;
+    border-radius: 12px; /* Bords plus ronds */
+    transition: all var(--transition-fast);
+    text-align: left;
+    position: relative;
+    overflow: hidden; /* Pour l'effet de survol */
+}
+
+.nav-item button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05));
+    transition: left var(--transition-medium);
+}
+
+.nav-item button:hover::before {
+    left: 100%;
+}
+
+.nav-item button i {
+    margin-right: 18px;
+    font-size: 1.4em;
+    color: var(--active-item-color); 
+    transition: color var(--transition-fast);
+    z-index: 1;
+}
+
+.nav-item button span {
+    z-index: 1;
+}
+
+.nav-item button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--header-color);
+    transform: translateX(10px); 
+}
+
+.nav-item button:hover i {
+    color: var(--header-color);
+}
+
+
+.nav-item.active button {
+    background: rgba(255, 255, 255, 0.25);
+    font-weight: bold;
+    color: var(--header-color);
+    box-shadow: var(--glass-inset-shadow); /* Ombre interne pour l'état actif */
+    border: 1px solid var(--active-item-color);
+}
+
+.nav-item.active button i {
+    color: var(--header-item-color);
+}
+
+.nav-item-divider {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    margin: 25px 0;
+}
+
+.navbar-footer {
+    padding-top: 25px;
+    padding-bottom: 25px;
+    padding-left: 25px;
+    padding-right: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.navbar-footer .nav-item button {
+    justify-content: center;
+    font-size: 1.1em;
+    padding: 12px 15px;
+}
+.navbar-footer .nav-item button i {
+    margin-right: 12px;
+}
+
+/* Main Content Area */
+.main-content-area {
+    flex-grow: 1;
+    margin-left: 340px; 
+    padding: 30px; 
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    height: 100vh; 
+    box-sizing: border-box;
+}
+
+/* Responsive */
+@media (max-width: 992px) { /* Tablette */
+    .left-navbar {
+        width: 90px;
+        min-width: 90px;
+        padding: 20px 8px;
+        align-items: center;
+    }
+    .left-navbar .navbar-header h2 {
+        display: none;
+    }
+    .left-navbar .app-logo {
+        width: 70px;
+        height: 70px;
+    }
+    .left-navbar .nav-item button span {
+        display: none;
+    }
+    .left-navbar .nav-item button {
+        justify-content: center;
+        padding: 12px 0;
+    }
+    .left-navbar .nav-item button i {
+        margin-right: 0;
+        font-size: 1.6em;
+    }
+    .main-content-area {
+        margin-left: 90px;
+        padding: 20px;
+    }
+    .main-content {
+        gap: 20px;
+        padding: 20px;
+    }
+    .left-panel, .middle-panel, .right-panel {
+        padding: 25px;
+    }
+}
+
+@media (max-width: 768px) { /* Petit Tablette / Mobile */
+    .main-content {
+        flex-direction: column; 
+        height: auto; 
+        padding: 15px;
+        gap: 15px;
+    }
+    .left-panel, .middle-panel, .right-panel {
+        flex: none; 
+        width: 100%; 
+        margin-bottom: 15px; 
+        min-height: auto;
+    }
+    .main-content-area {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) { /* Mobile */
+    .left-navbar {
+        width: 70px;
+        min-width: 70px;
+    }
+    .main-content-area {
+        margin-left: 70px;
+        padding: 10px;
+    }
+    .left-navbar .app-logo {
+        width: 50px;
+        height: 50px;
+    }
+}

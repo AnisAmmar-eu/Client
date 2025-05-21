@@ -28,18 +28,11 @@ namespace Admin.Controllers
             try
             {
                 var meetings = await _db.Meetings
-                    .Include(m => m.Template) // Gardez ceci pour inclure le template s'il existe
+                    .Include(m => m.Template) 
                     .Where(m => m.ProjectId == projectId)
                     .ToListAsync();
 
-                // Solution la plus probable pour l'erreur 500 : Configuration du sérialiseur JSON.
-                // Si vous utilisez System.Text.Json (par défaut dans .NET 6+), ajoutez ceci à Program.cs / Startup.cs:
-                // services.AddControllers().AddJsonOptions(options =>
-                // {
-                //     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-                //     // options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; // Bonne pratique
-                // });
-                // Si vous utilisez Newtonsoft.Json, configurez-le pour ignorer les boucles de référence.
+       
 
                 return Ok(meetings);
             }
@@ -50,35 +43,43 @@ namespace Admin.Controllers
             }
         }
 
-
         [HttpPost]
         public async Task<IActionResult> CreateMeeting([FromBody] Meetings meeting)
         {
+            if (string.IsNullOrWhiteSpace(meeting.Title) || meeting.Date == default(DateTime) || meeting.ProjectId == Guid.Empty)
+            {
+                // Return a structured JSON error that frontend can parse
+                return BadRequest(new { errors = new List<string> { "Title, Date, and ProjectId are required." } });
+            }
+
             meeting.Id = Guid.NewGuid();
 
-            // Vérifier que le projet existe
+            if (meeting.ProjectId == Guid.Empty)
+            {
+                return BadRequest(new { errors = new List<string> { "Project ID cannot be empty." } });
+            }
+
             var projectExists = await _db.Projects.AnyAsync(p => p.Id == meeting.ProjectId);
             if (!projectExists)
             {
-                return BadRequest("Project does not exist");
+                return BadRequest(new { errors = new List<string> { "The specified project does not exist." } });
             }
 
-            // **MODIFICATION ICI : Rendre la vérification du template optionnelle**
-            if (meeting.TemplateId.HasValue) // Vérifie si un TemplateId a été fourni
+            if (meeting.TemplateId.HasValue) 
             {
                 var templateExists = await _db.Templates.AnyAsync(t => t.Id == meeting.TemplateId.Value);
                 if (!templateExists)
                 {
-                    return BadRequest("Provided Template does not exist");
+                    // Return a structured JSON error
+                    return BadRequest(new { errors = new List<string> { "Provided Template does not exist." } });
                 }
             }
-            // Si meeting.TemplateId.HasValue est faux, cela signifie que TemplateId est null,
-            // et nous n'avons pas besoin de vérifier s'il existe dans la DB.
 
             _db.Meetings.Add(meeting);
             await _db.SaveChangesAsync();
 
-            return Ok(meeting);
+            // Return a structured JSON success response
+            return Ok(new { message = "Meeting created successfully!", meeting = meeting });
         }
 
         [HttpPost("{meetingId}/invite")]
@@ -104,5 +105,67 @@ namespace Admin.Controllers
 
             return Ok("Invitations envoyées.");
         }
+        [HttpPost("{meetingId}/archive")]
+        public async Task<IActionResult> ArchiveMeeting(Guid meetingId)
+        {
+            var meeting = await _db.Meetings.FirstOrDefaultAsync(m => m.Id == meetingId);
+            if (meeting == null)
+            {
+                return NotFound(new { error = "Meeting not found." });
+            }
+
+            if (meeting.IsArchived)
+            {
+                return BadRequest(new { error = "Meeting is already archived." });
+            }
+
+            meeting.IsArchived = true;
+            _db.Meetings.Update(meeting);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = "Meeting archived successfully." });
+        }
+        [HttpGet("archived")]
+        public async Task<IActionResult> GetAllArchivedMeetings()
+        {
+            try
+            {
+                var archivedMeetings = await _db.Meetings
+                    .Include(m => m.Template)
+                    .Include(m => m.Project)
+                    .Where(m => m.IsArchived)
+                    .ToListAsync();
+
+                return Ok(archivedMeetings);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erreur serveur : {ex.Message} - StackTrace: {ex.StackTrace}");
+            }
+        }
+        [HttpGet("{meetingId}/tasks")]
+        public async Task<IActionResult> GetTasksForMeeting(Guid meetingId)
+        {
+            try
+            {
+                var meeting = await _db.Meetings
+                    .Include(m => m.Tasks)
+                    .ThenInclude(t => t.AssignedTo)
+                    .FirstOrDefaultAsync(m => m.Id == meetingId);
+
+                if (meeting == null)
+                {
+                    return NotFound(new { error = "Meeting not found." });
+                }
+
+                return Ok(meeting.Tasks);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erreur serveur : {ex.Message} - StackTrace: {ex.StackTrace}");
+            }
+        }
+
+
     }
 }

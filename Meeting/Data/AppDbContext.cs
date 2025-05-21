@@ -12,6 +12,7 @@ namespace Meeting.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectUser> ProjectUsers { get; set; }
+
         public DbSet<Meetings> Meetings { get; set; }
         public DbSet<Template> Templates { get; set; }
         public DbSet<TaskItem> Tasks { get; set; }

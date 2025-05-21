@@ -72,6 +72,11 @@ namespace Meeting.Controllers
 
             return Ok();
         }
+        [HttpGet("users")]
+        public IActionResult GetDivisions()
+        {
+            return Ok(_db.Users.ToList());
+        }
     }
 
 }

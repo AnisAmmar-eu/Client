@@ -1,38 +1,364 @@
-.App {
-  text-align: center;
+/* src/App.css */
+
+/* Variables CSS pour le thème Glassy et les animations de couleurs */
+:root {
+    /* Couleurs de fond pour l'animation */
+    --bg-gradient-start-1: #8E2DE2; /* Violet clair */
+    --bg-gradient-end-1: #4A00E0;   /* Violet foncé */
+    --bg-gradient-start-2: #FF512F; /* Orange vif */
+    --bg-gradient-end-2: #DD2476;   /* Rose fuchsia */
+    --bg-gradient-start-3: #00bf8f; /* Vert turquoise */
+    --bg-gradient-end-3: #007c6f;   /* Vert foncé */
+    --bg-gradient-start-4: #21D4FD; /* Bleu ciel */
+    --bg-gradient-end-4: #B721FF;   /* Violet clair */
+
+    /* Couleurs Glassy */
+    --glass-bg-color: rgba(255, 255, 255, 0.15); /* Fond légèrement transparent */
+    --glass-border-color: rgba(255, 255, 255, 0.3); /* Bordure transparente */
+    --glass-blur-amount: 30px; /* Augmenter le flou pour un effet plus prononcé */
+    --glass-border-radius: 20px; /* Rayon de bordure plus grand pour un look plus doux */
+    --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); /* Ombre plus profonde */
+    --glass-inset-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1); /* Ombre interne subtile */
+
+    /* Couleurs du texte */
+    --text-color-primary: #e0e0e0;
+    --text-color-secondary: #c0c0c0;
+    --header-color: #ffffff;
+    --active-item-color: #93f7ff; /* Couleur vive pour l'élément actif */
+
+    /* Couleurs des boutons */
+    --button-bg-color: rgba(255, 255, 255, 0.18);
+    --button-hover-bg-color: rgba(255, 255, 255, 0.25);
+    --button-border-color: rgba(255, 255, 255, 0.4);
+    --button-text-color: var(--header-color);
+
+    /* Transitions */
+    --transition-fast: 0.2s ease-out;
+    --transition-medium: 0.3s ease-in-out;
+    --transition-slow: 0.5s ease-in-out;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Base body styles */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    color: var(--text-color-primary);
+    overflow-x: hidden;
+    position: relative; /* Nécessaire pour les pseudo-éléments du dégradé animé */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* Animation du fond comme CleanMyMac */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Place derrière le contenu */
+    background: linear-gradient(135deg, var(--bg-gradient-start-1), var(--bg-gradient-end-1));
+    background-size: 400% 400%; /* Permet le mouvement du dégradé */
+    animation: backgroundAnimation 20s ease infinite;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+@keyframes backgroundAnimation {
+    0% { background-position: 0% 50%; background: linear-gradient(135deg, var(--bg-gradient-start-1), var(--bg-gradient-end-1)); }
+    25% { background-position: 50% 100%; background: linear-gradient(135deg, var(--bg-gradient-start-2), var(--bg-gradient-end-2)); }
+    50% { background-position: 100% 50%; background: linear-gradient(135deg, var(--bg-gradient-start-3), var(--bg-gradient-end-3)); }
+    75% { background-position: 50% 0%; background: linear-gradient(135deg, var(--bg-gradient-start-4), var(--bg-gradient-end-4)); }
+    100% { background-position: 0% 50%; background: linear-gradient(135deg, var(--bg-gradient-start-1), var(--bg-gradient-end-1)); }
 }
 
-.App-link {
-  color: #61dafb;
+/* Effet Glassy générique */
+.glass-effect {
+    background: var(--glass-bg-color);
+    backdrop-filter: blur(var(--glass-blur-amount));
+    -webkit-backdrop-filter: blur(var(--glass-blur-amount));
+    border: 1px solid var(--glass-border-color);
+    border-radius: var(--glass-border-radius);
+    box-shadow: var(--glass-shadow);
+    transition: box-shadow var(--transition-medium), background var(--transition-medium), transform var(--transition-medium);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.glass-effect:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Titres dans les éléments glassy */
+.glass-effect h1,
+.glass-effect h2,
+.glass-effect h3,
+.glass-effect h4 {
+    color: var(--header-color);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.4); /* Glow plus prononcé */
+}
+
+/* Styles de formulaire */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-color-primary);
+    font-size: 0.95em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="date"],
+.form-group input[type="time"],
+.form-group select,
+.form-group textarea {
+    background: rgba(255, 255, 255, 0.08); /* Moins opaque que la base glassy */
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: var(--header-color);
+    padding: 12px 15px;
+    border-radius: 10px;
+    width: calc(100% - 30px); /* Ajuster pour padding */
+    box-sizing: border-box;
+    transition: all var(--transition-fast);
+    font-size: 1em;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--active-item-color);
+    box-shadow: 0 0 0 3px rgba(147, 247, 255, 0.4); /* Glow focus */
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Styles des boutons génériques */
+.glass-button,
+button:not(.nav-item button):not(.icon-button):not(.tab-button):not(.priority-button) { /* Exclure les boutons de navigation, d'icône, de tab et de priorité */
+    background: var(--button-bg-color);
+    border: 1px solid var(--button-border-color);
+    color: var(--button-text-color);
+    padding: 12px 25px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.05em;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    box-shadow: var(--glass-shadow);
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.glass-button:hover,
+button:not(.nav-item button):not(.icon-button):not(.tab-button):not(.priority-button):hover {
+    background: var(--button-hover-bg-color);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.glass-button:active,
+button:not(.nav-item button):not(.icon-button):not(.tab-button):not(.priority-button):active {
+    transform: translateY(0);
+    box-shadow: var(--glass-shadow);
+}
+
+.glass-button:disabled,
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Messages d'état */
+.error-message, .success-message, .loading-message, .hint-message, .no-items-message, .no-results, .selected-user-hint, .auth-hint {
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+}
+
+.error-message {
+    background-color: rgba(255, 0, 0, 0.2);
+    border-color: rgba(255, 0, 0, 0.5);
+    color: #ffcccc;
+}
+
+.success-message {
+    background-color: rgba(0, 255, 0, 0.2);
+    border-color: rgba(0, 255, 0, 0.5);
+    color: #ccffcc;
+}
+
+.loading-message, .hint-message, .no-items-message, .no-results, .selected-user-hint, .auth-hint {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    font-style: italic;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* Structure de base des tableaux de bord (panneaux) */
+.main-content {
+    display: flex;
+    flex: 1;
+    padding: 30px; /* Augmenter le padding général */
+    gap: 30px; /* Augmenter l'espace entre les panneaux */
+    height: calc(100vh - 60px); /* Ajuster la hauteur pour tenir compte du padding vertical */
+    box-sizing: border-box; /* Inclure padding dans la hauteur */
+}
+
+.left-panel, .middle-panel, .right-panel {
+    flex: 1;
+    padding: 35px; /* Padding interne des panneaux */
+    display: flex;
+    flex-direction: column;
+    min-height: 400px; /* Hauteur minimale pour les panneaux */
+    box-sizing: border-box;
+}
+
+/* Styles pour les listes (projets, réunions, tâches) */
+.custom-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+    flex-grow: 1;
+    overflow-y: auto; /* Permettre le défilement si la liste est longue */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.custom-list::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-list::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+}
+
+.custom-list li {
+    background: rgba(255, 255, 255, 0.07); /* Légèrement plus clair que le fond du panneau */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 15px; /* Bords plus ronds */
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative; /* Pour les animations ou badges */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Ombre légère pour les éléments de liste */
+}
+
+.custom-list li:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-5px); /* Animation de survol */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.custom-list li.active {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: var(--active-item-color);
+    box-shadow: var(--glass-shadow);
+    color: var(--active-item-color);
+    font-weight: 600;
+}
+
+/* Styles pour les cards */
+.glassy-card {
+    background: rgba(255, 255, 255, 0.1); /* Moins opaque pour un effet "carte" plus léger */
+    backdrop-filter: blur(var(--glass-blur-amount));
+    -webkit-backdrop-filter: blur(var(--glass-blur-amount));
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--glass-border-radius);
+    box-shadow: var(--glass-shadow);
+    padding: 25px;
+    margin-bottom: 20px;
+    transition: all var(--transition-medium);
+}
+
+.glassy-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Utilitaires */
+.text-center { text-align: center; }
+.mb-20 { margin-bottom: 20px; }
+
+.main-content {
+    display: flex;
+    flex-wrap: none; 
+    flex: 1; 
+    padding: 30px; /* Augmenter le padding général */
+    gap: 30px; /* Augmenter l'espace entre les panneaux */
+    height: calc(100vh - 60px); /* Ajuster la hauteur pour tenir compte du padding vertical */
+    box-sizing: border-box; /* Inclure padding dans la hauteur */
+    align-items: stretch; /* S'assurer que les éléments s'étirent pour remplir la hauteur */
+    justify-content: center; /* Centrer les éléments si l'espace est suffisant */
+}
+
+.left-panel, .middle-panel, .right-panel, .main-dashboard-panel, .intro-panel { /* AJOUTEZ .intro-panel ICI */
+    flex: 1; /* Permet à chaque panneau de prendre de l'espace */
+    padding: 35px; /* Padding interne des panneaux */
+    display: flex;
+    flex-direction: column;
+    min-height: 400px; /* Hauteur minimale pour les panneaux */
+    box-sizing: border-box;
+    /* Ajoutez des styles pour les scrollbars pour les panneaux si leur contenu est long */
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.left-panel::-webkit-scrollbar,
+.middle-panel::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar,
+.intro-panel::-webkit-scrollbar {
+    width: 8px;
+}
+.left-panel::-webkit-scrollbar-track,
+.middle-panel::-webkit-scrollbar-track,
+.right-panel::-webkit-scrollbar-track,
+.intro-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+.left-panel::-webkit-scrollbar-thumb,
+.middle-panel::-webkit-scrollbar-thumb,
+.right-panel::-webkit-scrollbar-thumb,
+.intro-panel::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+}
+.dashboard-home-container,
+.project-dashboard-container,
+.meetings-dashboard-container,
+.task-dashboard-container {
+    width: 100%;
+    display: flex; /* S'assurer que le conteneur est un flex pour contenir le main-content */
+    flex-direction: column;
+}
+
+.full-height-panel { /* Utile pour les pages avec un seul grand panneau comme le dashboard */
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

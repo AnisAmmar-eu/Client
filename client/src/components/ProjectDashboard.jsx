@@ -1,48 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import './ProjectDashboard.css';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import IntroPanel from './IntroPanel';
+import '../App.css'; // Assurez-vous que App.css est importé pour les styles généraux et les notifications
+import { FaUserPlus, FaInfoCircle } from 'react-icons/fa'; // Icônes pour le nouveau bouton et infos user
 
 const ProjectDashboard = () => {
+    // --- States existants ---
     const [projects, setProjects] = useState([]);
     const [newProjectName, setNewProjectName] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [selectedProjectId, setSelectedProjectId] = useState('');
-    const [selectedUserIdToAdd, setSelectedUserIdToAdd] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [showContent, setShowContent] = useState(true); // Initialisé à true
+
+    // --- Nouveaux states pour la gestion des utilisateurs ---
+    const [users, setUsers] = useState([]); // Liste de tous les utilisateurs
+    const [selectedUser, setSelectedUser] = useState(null); // Utilisateur sélectionné pour afficher les détails
+    // showUserCreationForm n'est plus nécessaire comme state de bascule pour le panneau de droite.
+    // Il gérera seulement l'état du formulaire (initialisé/nettoyé) après soumission si besoin.
+    const [newUserName, setNewUserName] = useState('');
+    const [newUserEmail, setNewUserEmail] = useState('');
+    const [newUserPassword, setNewUserPassword] = useState('');
 
     const navigate = useNavigate();
 
-    // obtenir token d'auth
     const getAuthToken = () => localStorage.getItem('authToken');
-
-    // Vérifie l'auth
-    useEffect(() => {
+    const getUserId = () => {
         const token = getAuthToken();
-        if (!token) {
-            // Si pas de token, redirige vers la page de connexion
-            navigate('/login');
-        } else {
-            fetchProjects();
+        if (token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                const payload = JSON.parse(jsonPayload);
+                return payload.sub;
+            } catch (e) {
+                console.error("Failed to decode token:", e);
+                return null;
+            }
         }
-    }, [navigate]);
+        return null;
+    };
 
-    const fetchProjects = async () => {
+    // Fonction pour afficher une notification temporaire
+    const showNotification = useCallback((message, type) => {
+        if (type === 'success') {
+            setSuccess(message);
+            setError(''); // Clear any previous error
+            setTimeout(() => setSuccess(''), 2000); // Clear after 2 seconds
+        } else {
+            setError(message);
+            setSuccess(''); // Clear any previous success
+            setTimeout(() => setError(''), 2000); // Clear after 2 seconds
+        }
+    }, []);
+
+    // --- Define fetch functions BEFORE useEffect ---
+    const fetchMyProjects = useCallback(async () => {
         setLoading(true);
         setError('');
         const token = getAuthToken();
+        const userId = getUserId();
 
-        if (!token) {
-            setError('Non autorisé : connectez-vous pour accéder aux projets.');
+        if (!token || !userId) {
+            showNotification('Non autorisé : connectez-vous pour accéder à vos projets.', 'error');
             setLoading(false);
             navigate('/login');
             return;
         }
 
         try {
-            const response = await fetch('https://localhost:7212/api/Project/projects', {
+            const response = await fetch(`https://localhost:7212/api/Project/projects`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -50,27 +80,95 @@ const ProjectDashboard = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                // Assurez-vous que data.$values existe si c'est un format de réponse JSON par défaut de .NET
-                setProjects(data.$values || data);
-                if ((data.$values || data).length > 0) {
-                    setSelectedProjectId((data.$values || data)[0].id);
-                }
+                const fetchedProjects = data.$values || data;
+                setProjects(fetchedProjects);
             } else if (response.status === 401) {
-                // Si le token est invalide ou expiré
-                setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
+                showNotification("Session expirée ou non autorisé. Veuillez vous reconnecter.", 'error');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
-                setError('Erreur lors de la récupération des projets.');
+                showNotification('Erreur lors de la récupération de vos projets.', 'error');
             }
         } catch (err) {
-            setError('Erreur réseau ou du serveur.');
-            console.error('Fetch projects error:', err);
+            showNotification('Erreur réseau ou du serveur.', 'error');
+            console.error('Fetch my projects error:', err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [navigate, showNotification]);
 
+    const fetchAllUsers = useCallback(async () => {
+        setLoading(true);
+        const token = getAuthToken();
+
+        if (!token) {
+            showNotification('Non autorisé : connectez-vous pour accéder aux utilisateurs.', 'error');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://localhost:7212/api/Project/users`, { // Endpoint pour tous les utilisateurs
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const fetchedUsers = data.$values || data;
+
+                // Tri alphabétique des utilisateurs par fullName, puis par email si fullName est absent
+                const sortedUsers = [...fetchedUsers].sort((a, b) => {
+                    const nameA = a.fullName || a.email;
+                    const nameB = b.fullName || b.email;
+                    return nameA.localeCompare(nameB);
+                });
+                setUsers(sortedUsers);
+
+                // Sélectionne le premier utilisateur par défaut si la liste n'est pas vide et qu'aucun n'est déjà sélectionné
+                // La persistance de la sélection manuelle est importante
+                if (sortedUsers.length > 0 && !selectedUser) {
+                    setSelectedUser(sortedUsers[0]);
+                } else if (sortedUsers.length === 0) {
+                    setSelectedUser(null); // Si plus d'utilisateurs, désélectionne
+                } else if (selectedUser) {
+                    // Si un utilisateur était déjà sélectionné, assurez-vous qu'il existe toujours dans la liste mise à jour
+                    const foundSelected = sortedUsers.find(user => user.id === selectedUser.id);
+                    if (!foundSelected) {
+                        // Si l'utilisateur précédemment sélectionné n'existe plus, sélectionne le premier nouveau
+                        setSelectedUser(sortedUsers[0]);
+                    }
+                }
+
+            } else if (response.status === 401) {
+                showNotification("Session expirée ou non autorisé. Veuillez vous reconnecter.", 'error');
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                showNotification('Erreur lors de la récupération des utilisateurs.', 'error');
+            }
+        } catch (err) {
+            showNotification('Erreur réseau ou du serveur lors de la récupération des utilisateurs.', 'error');
+            console.error('Fetch all users error:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [navigate, showNotification, selectedUser]); // Ajouté selectedUser aux dépendances
+
+    // --- Fetch initial data (projects and all users) ---
+    useEffect(() => {
+        const token = getAuthToken();
+        if (!token) {
+            navigate('/login');
+        } else {
+            fetchMyProjects();
+            fetchAllUsers(); // Fetch all users on component mount and handle initial selection
+        }
+    }, [navigate, fetchMyProjects, fetchAllUsers]);
+
+
+    // --- Handlers existants (avec notifications) ---
     const handleCreateProject = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -79,14 +177,14 @@ const ProjectDashboard = () => {
         const token = getAuthToken();
 
         if (!token) {
-            setError('Vous devez être connecté pour créer un projet.');
+            showNotification('Vous devez être connecté pour créer un projet.', 'error');
             setLoading(false);
-            navigate('/login'); // Redirige si pas de token
+            navigate('/login');
             return;
         }
 
         if (!newProjectName.trim()) {
-            setError('Le nom du projet ne peut pas être vide.');
+            showNotification('Le nom du projet ne peut pas être vide.', 'error');
             setLoading(false);
             return;
         }
@@ -102,73 +200,29 @@ const ProjectDashboard = () => {
             });
 
             if (response.ok) {
-                setSuccess('Projet créé avec succès !');
+                showNotification('Projet créé avec succès !', 'success');
                 setNewProjectName('');
-                fetchProjects(); // Rafraîchit la liste des projets
+                await fetchMyProjects();
+                setShowContent(true);
             } else if (response.status === 401) {
-                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                showNotification('Session expirée ou non autorisé. Veuillez vous reconnecter.', 'error');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
                 const errorText = await response.text();
-                setError(`Erreur lors de la création du projet: ${errorText}`);
+                showNotification(`Erreur lors de la création du projet: ${errorText}`, 'error');
             }
         } catch (err) {
-            setError('Erreur réseau ou du serveur.');
+            showNotification('Erreur réseau ou du serveur.', 'error');
             console.error('Create project error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSearchUsers = async () => {
-        setLoading(true);
-        setError('');
-        const token = getAuthToken(); // Obtenir le token pour la recherche d'utilisateurs
+    // --- Nouveaux Handlers pour les utilisateurs ---
 
-        if (!token) {
-            setError('Vous devez être connecté pour rechercher des utilisateurs.');
-            setLoading(false);
-            navigate('/login');
-            return;
-        }
-
-        if (!searchQuery.trim()) {
-            setError('Veuillez entrer un terme de recherche pour les utilisateurs.');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const response = await fetch(`https://localhost:7212/api/Auth/users/search?query=${searchQuery}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setSearchResults(data.$values || data || []); // Adaptez si votre API retourne un format différent
-            } else if (response.status === 401) {
-                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
-                localStorage.removeItem('authToken');
-                navigate('/login');
-            } else {
-                const errorText = await response.text();
-                setError(`Erreur lors de la recherche des utilisateurs: ${errorText}`);
-                setSearchResults([]); // Vide les résultats en cas d'erreur
-            }
-        } catch (err) {
-            setError('Erreur réseau ou du serveur.');
-            console.error('Search users error:', err);
-            setSearchResults([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    const handleAddParticipant = async (e) => {
+    const handleCreateUser = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -176,93 +230,83 @@ const ProjectDashboard = () => {
         const token = getAuthToken();
 
         if (!token) {
-            setError('Vous devez être connecté pour ajouter un participant.');
+            showNotification('Vous devez être connecté pour créer un utilisateur.', 'error');
             setLoading(false);
-            navigate('/login'); // Redirige si pas de token
             return;
         }
 
-        if (!selectedProjectId || !selectedUserIdToAdd) {
-            setError('Veuillez sélectionner un projet et un utilisateur.');
+        if (!newUserName.trim() || !newUserEmail.trim()) {
+            showNotification('Veuillez remplir tous les champs pour créer un utilisateur.', 'error');
+            setLoading(false);
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUserEmail)) {
+            showNotification('Veuillez entrer une adresse email valide.', 'error');
             setLoading(false);
             return;
         }
 
         try {
-            const response = await fetch(`https://localhost:7212/api/Project/${selectedProjectId}/addParticipant/${selectedUserIdToAdd}`, {
+            const response = await fetch('https://localhost:7212/api/Auth/register', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // L'admin qui crée l'utilisateur doit être authentifié
+                },
+                body: JSON.stringify({
+                    fullName: newUserName,
+                    email: newUserEmail,
+                })
             });
 
             if (response.ok) {
-                setSuccess('Participant ajouté avec succès !');
+                showNotification('Utilisateur créé avec succès !', 'success');
+                setNewUserName('');
+                setNewUserEmail('');
+                setNewUserPassword('');
+                fetchAllUsers(); // Rafraîchir la liste des utilisateurs
+            } else if (response.status === 409) { // Conflict for existing user
+                showNotification('Un utilisateur avec cet email existe déjà.', 'error');
             } else if (response.status === 401) {
-                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                showNotification('Non autorisé : vous n\'avez pas la permission de créer des utilisateurs.', 'error');
                 localStorage.removeItem('authToken');
                 navigate('/login');
-            } else {
+            }
+            else {
                 const errorText = await response.text();
-                setError(`Erreur lors de l'ajout du participant: ${errorText}`);
+                showNotification(`Erreur lors de la création de l'utilisateur: ${errorText}`, 'error');
             }
         } catch (err) {
-            setError('Erreur réseau ou du serveur.');
-            console.error('Add participant error:', err);
+            showNotification('Erreur réseau ou du serveur lors de la création de l\'utilisateur.', 'error');
+            console.error('Create user error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    // Nouvelle fonction pour la déconnexion
-    const handleLogout = () => {
-        localStorage.removeItem('authToken'); // Supprime le token du stockage local
-        navigate('/login'); // Redirige l'utilisateur vers la page de connexion
-    };
+    // Fonction pour afficher le contenu détaillé ou l'intro
+    const renderContent = () => {
+        if (!showContent && projects.length === 0 && !loading && !error) {
+            return (
+                <IntroPanel
+                    title="Gérez vos Projets"
+                    subtitle="Créez et organisez tous vos projets importants. Commencez par ajouter votre premier projet !"
+                    imageUrl="/images/project_icon.png"
+                    buttonText="Créer mon premier projet"
+                    onButtonClick={() => {
+                        setShowContent(true);
+                    }}
+                />
+            );
+        }
 
-    return (
-        <div className="project-dashboard-container">
-            <div className="top-bar">
-                <div className="menu-tabs">
-                    {/* Les boutons de navigation peuvent être des Links de react-router-dom */}
-                    <button className="tab-button active">Initiate</button>
-                    <button className="tab-button">Meetings</button>
-                    <button className="tab-button">Tasks</button>
-                    <button className="tab-button">Archive</button>
-                    <button className="tab-button add-tab">+</button>
-                </div>
-                <div className="user-settings">
-                    <button className="icon-button"><i className="fas fa-search"></i></button>
-                    <button className="icon-button"><i className="fas fa-cog"></i></button>
-                    {/* Bouton de déconnexion ajouté ici */}
-                    <button className="icon-button" onClick={handleLogout} title="Déconnexion">
-                        <i className="fas fa-sign-out-alt"></i> {/* Icône de déconnexion (Font Awesome) */}
-                    </button>
-                    <button className="icon-button"><i className="fas fa-question-circle"></i></button>
-                </div>
-            </div>
-
-            <div className="main-content">
-                <div className="left-panel">
-                    <h3>Projets existants</h3>
-                    {loading && <p className="loading-message">Chargement des projets...</p>}
-                    {error && <div className="error-message">{error}</div>}
-                    <ul className="project-list">
-                        {projects.length === 0 && !loading && !error && <p>Aucun projet trouvé.</p>}
-                        {projects.map(project => (
-                            <li key={project.id} onClick={() => setSelectedProjectId(project.id)}
-                                className={selectedProjectId === project.id ? 'active' : ''}>
-                                {project.name}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="right-panel">
-                    {success && <div className="success-message">{success}</div>}
-                    {error && <div className="error-message">{error}</div>}
-
-                    <div className="section create-project-section">
+        // Sinon, affichez le contenu normal de ProjectDashboard avec 3 panneaux
+        return (
+            <div className="main-content three-column-layout">
+                {/* Left Panel: Création Projet & Vos Projets Créés */}
+                <div className="left-panel glass-effect">
+                    <div className="glassy-card mb-20">
                         <h4>Créer un nouveau projet</h4>
                         <form onSubmit={handleCreateProject}>
                             <div className="form-group">
@@ -270,79 +314,117 @@ const ProjectDashboard = () => {
                                 <input
                                     type="text"
                                     id="projectName"
+                                    name="projectName"
                                     value={newProjectName}
                                     onChange={(e) => setNewProjectName(e.target.value)}
-                                    placeholder="Ex: Projet Web 2024"
+                                    placeholder="Ex: Projet de refonte UX"
+                                    required
                                 />
                             </div>
-                            <button type="submit" disabled={loading || !getAuthToken()}>
+                            <button type="submit" disabled={loading || !getAuthToken()} className="glass-button">
                                 {loading ? 'Création...' : 'Créer le projet'}
                             </button>
                             {!getAuthToken() && <p className="auth-hint">Connectez-vous pour créer un projet.</p>}
                         </form>
                     </div>
 
-                    <div className="section add-participant-section">
-                        <h4>Ajouter un participant à un projet</h4>
-                        <form onSubmit={handleAddParticipant}>
-                            <div className="form-group">
-                                <label htmlFor="selectProject">Sélectionner un projet</label>
-                                <select
-                                    id="selectProject"
-                                    value={selectedProjectId}
-                                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                                >
-                                    <option value="">-- Choisir un projet --</option>
-                                    {projects.map(project => (
-                                        <option key={project.id} value={project.id}>{project.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                    <h3>Vos Projets Créés</h3>
+                    {loading && <p className="loading-message">Chargement de vos projets...</p>}
+                    {error && <div className="error-message">{error}</div>}
+                    <ul className="custom-list project-list">
+                        {projects.length === 0 && !loading && !error ? (
+                            <p className="no-items-message">Vous n'avez créé aucun projet.</p>
+                        ) : (
+                            projects.map(project => (
+                                <li key={project.id}>
+                                    {project.name}
+                                </li>
+                            ))
+                        )}
+                    </ul>
+                </div>
 
-                            <div className="form-group search-user-group">
-                                <label htmlFor="searchUser">Rechercher un utilisateur</label>
+                {/* Middle Panel: Liste des Utilisateurs ET Détails Utilisateur */}
+                <div className="middle-panel glass-effect">
+                    <h3>Liste des Utilisateurs</h3>
+                    {loading && <p className="loading-message">Chargement des utilisateurs...</p>}
+                    {error && <div className="error-message">{error}</div>}
+                    <ul className="custom-list user-list mb-20"> {/* Ajout de mb-20 pour espacer la liste et les détails */}
+                        {users.length === 0 && !loading && !error ? (
+                            <p className="no-items-message">Aucun utilisateur trouvé.</p>
+                        ) : (
+                            users.map(user => (
+                                <li
+                                    key={user.id}
+                                    onClick={() => setSelectedUser(user)} // Met à jour l'utilisateur sélectionné
+                                    className={selectedUser && selectedUser.id === user.id ? 'active' : ''}
+                                >
+                                    {user.fullName || user.email}
+                                </li>
+                            ))
+                        )}
+                    </ul>
+
+                    {/* Détails de l'utilisateur sélectionné (directement en dessous de la liste) */}
+                    {selectedUser && (
+                        <div className="glassy-card user-detail-card">
+                            <h4><FaInfoCircle style={{ marginRight: '10px' }} /> Détails de l'utilisateur</h4>
+                            <p><strong>Nom Complet:</strong> {selectedUser.fullName || 'N/A'}</p>
+                            <p><strong>Email:</strong> {selectedUser.email}</p>
+                            {/* Le bouton "Fermer les détails" n'est plus utile ici, car il reste toujours affiché */}
+                            {/* <button onClick={() => setSelectedUser(null)} className="glass-button full-width" style={{ marginTop: '15px' }}>
+                                Fermer les détails
+                            </button> */}
+                        </div>
+                    )}
+                    {!selectedUser && users.length > 0 && (
+                        <p className="no-selection-message glassy-card">Sélectionnez un utilisateur pour voir ses détails.</p>
+                    )}
+                </div>
+
+                {/* Right Panel: Création Utilisateur uniquement */}
+                <div className="right-panel glass-effect">
+                    <div className="glassy-card user-creation-form">
+                        <h4>Créer un nouvel utilisateur</h4>
+                        <form onSubmit={handleCreateUser}>
+                            <div className="form-group">
+                                <label htmlFor="newUserName">Nom Complet</label>
                                 <input
                                     type="text"
-                                    id="searchUser"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Email de l'utilisateur"
+                                    id="newUserName"
+                                    value={newUserName}
+                                    onChange={(e) => setNewUserName(e.target.value)}
+                                    placeholder="Nom et prénom"
+                                    required
                                 />
-                                <button type="button" onClick={handleSearchUsers} disabled={loading || !searchQuery.trim()}>
-                                    Rechercher
-                                </button>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="newUserEmail">Email</label>
+                                <input
+                                    type="email"
+                                    id="newUserEmail"
+                                    value={newUserEmail}
+                                    onChange={(e) => setNewUserEmail(e.target.value)}
+                                    placeholder="email@example.com"
+                                    required
+                                />
                             </div>
 
-                            {searchResults.length > 0 && (
-                                <div className="form-group">
-                                    <label htmlFor="selectUser">Sélectionner l'utilisateur</label>
-                                    <select
-                                        id="selectUser"
-                                        value={selectedUserIdToAdd}
-                                        onChange={(e) => setSelectedUserIdToAdd(e.target.value)}
-                                    >
-                                        <option value="">-- Choisir un utilisateur --</option>
-                                        {searchResults.map((user) => (
-                                            <option key={user.id} value={user.id}>
-                                                {user.email} {user.userName ? `(${user.userName})` : ''} {/* Affiche l'email et le nom d'utilisateur s'il existe */}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            {searchResults.length === 0 && searchQuery.trim() && !loading && (
-                                <p className="no-results">Aucun utilisateur trouvé pour "{searchQuery}".</p>
-                            )}
-
-                            <button type="submit" disabled={loading || !selectedProjectId || !selectedUserIdToAdd || !getAuthToken()}>
-                                {loading ? 'Ajout...' : 'Ajouter le participant'}
+                            <button type="submit" disabled={loading || !getAuthToken()} className="glass-button">
+                                {loading ? 'Création...' : 'Créer l\'utilisateur'}
                             </button>
-                            {!getAuthToken() && <p className="auth-hint">Connectez-vous pour ajouter un participant.</p>}
                         </form>
                     </div>
                 </div>
             </div>
+        );
+    };
+
+    return (
+        <div className="project-dashboard-container">
+            {success && <div className="notification success">{success}</div>}
+            {error && <div className="notification error">{error}</div>}
+            {renderContent()}
         </div>
     );
 };

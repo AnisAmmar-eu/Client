@@ -31,6 +31,9 @@ namespace Meeting.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -38,7 +41,7 @@ namespace Meeting.Migrations
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("TemplateId")
+                    b.Property<Guid?>("TemplateId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Title")
@@ -93,7 +96,7 @@ namespace Meeting.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AssignedToId")
+                    b.Property<Guid?>("AssignedToId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("AssignedToUserId")
@@ -186,9 +189,7 @@ namespace Meeting.Migrations
 
                     b.HasOne("Meeting.Models.Template", "Template")
                         .WithMany()
-                        .HasForeignKey("TemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TemplateId");
 
                     b.Navigation("Project");
 
@@ -218,9 +219,7 @@ namespace Meeting.Migrations
                 {
                     b.HasOne("Meeting.Models.User", "AssignedTo")
                         .WithMany()
-                        .HasForeignKey("AssignedToId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("AssignedToId");
 
                     b.HasOne("Meeting.Models.Meetings", "Meeting")
                         .WithMany("Tasks")

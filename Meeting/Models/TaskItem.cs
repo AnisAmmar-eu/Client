@@ -9,10 +9,10 @@
         public string Priority { get; set; } // Low, Medium, High
 
         public Guid AssignedToUserId { get; set; }
-        public User AssignedTo { get; set; }
+        public User? AssignedTo { get; set; }
 
         public Guid MeetingId { get; set; }
-        public Meetings Meeting { get; set; }
+        public Meetings? Meeting { get; set; }
     }
 
 }

@@ -1,0 +1,137 @@
+/* src/components/IntroPanel.css */
+
+.intro-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centre verticalement le contenu */
+    align-items: center; /* Centre horizontalement les éléments flex */
+    text-align: center; /* Centre le texte à l'intérieur */
+    padding: 50px;
+    box-sizing: border-box;
+    min-height: 100%;
+    width: 100%; /* S'assure que le panneau prend toute la largeur disponible */
+    height: 100%; /* S'assure que le panneau prend toute la hauteur disponible */
+    background: transparent; /* Rend le fond transparent pour ne pas créer de "boîte" */
+}
+
+.intro-content {
+    max-width: 800px; /* Limite la largeur du contenu pour une meilleure lisibilité */
+    width: 100%; /* Prend toute la largeur disponible jusqu'à max-width */
+    margin: 0 auto; /* Centre le bloc de contenu horizontalement */
+    display: flex; /* Utilise flexbox pour centrer les éléments à l'intérieur */
+    flex-direction: column;
+    align-items: center; /* Centre les éléments enfants (titre, image, bouton) */
+    justify-content: center;
+}
+
+/* Styles pour le titre */
+.intro-title {
+    font-size: 3.5em; /* Plus grand pour un titre d'accueil */
+    margin-bottom: 15px;
+    color: var(--header-color, #ffffff); /* Fallback colour if variable not found */
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6); /* Effet de lueur */
+}
+
+/* Styles pour le sous-titre */
+.intro-subtitle {
+    font-size: 1.3em;
+    color: var(--text-color-secondary, rgba(255, 255, 255, 0.8)); /* Fallback colour */
+    margin-bottom: 40px;
+}
+
+.intro-image-container {
+    margin: 50px auto; /* Centre le conteneur de l'image */
+    width: 250px; /* Taille de l'image, ajustable */
+    height: 250px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    /* Supprime les styles de "boîte" ou de fond circulaire */
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.intro-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Styles pour la rotation 3D */
+    transform-style: preserve-3d; /* Nécessaire pour la transformation 3D */
+    animation: rotate3D 5s linear infinite; /* Animation de rotation */
+}
+
+/* Keyframes pour la rotation 3D */
+@keyframes rotate3D {
+  from {
+    transform: rotateY(0deg) rotateX(0deg);
+  }
+  to {
+    transform: rotateY(360deg) rotateX(360deg); /* Rotation autour des axes Y et X */
+  }
+}
+
+.intro-button {
+    padding: 18px 40px; /* Plus grand pour un bouton principal */
+    font-size: 1.4em;
+    font-weight: 600;
+    margin-top: 40px;
+    /* Style du bouton "glassy" plus léger */
+    background: rgba(255, 255, 255, 0.08); /* Fond subtil */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Bordure légère */
+    border-radius: 15px; /* Rayon de bordure plus doux */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Ombre douce */
+    backdrop-filter: blur(5px); /* Effet de flou derrière */
+    -webkit-backdrop-filter: blur(5px);
+    color: white; /* Couleur du texte */
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Légère ombre sur le texte */
+    cursor: pointer;
+    transition: all 0.3s ease; /* Transition douce pour les interactions */
+}
+
+.intro-button:hover {
+    background-color: rgba(255, 255, 255, 0.15); /* Changement de fond au survol */
+    box-shadow: 0 6px 40px rgba(0, 0, 0, 0.2); /* Ombre plus prononcée au survol */
+    transform: translateY(-2px); /* Léger soulèvement au survol */
+}
+
+/* Ajustements responsifs */
+@media (max-width: 768px) {
+    .intro-title {
+        font-size: 2.5em;
+    }
+    .intro-subtitle {
+        font-size: 1em;
+    }
+    .intro-image-container {
+        width: 180px;
+        height: 180px;
+    }
+    .intro-button {
+        padding: 15px 30px;
+        font-size: 1.2em;
+        border-radius: 100px;
+    }
+}
+
+@media (max-width: 576px) {
+    .intro-panel {
+        padding: 30px;
+    }
+    .intro-title {
+        font-size: 2em;
+    }
+    .intro-subtitle {
+        font-size: 0.9em;
+    }
+    .intro-image-container {
+        width: 150px;
+        height: 150px;
+    }
+    .intro-button {
+        padding: 12px 25px;
+        font-size: 1.1em;
+    }
+}

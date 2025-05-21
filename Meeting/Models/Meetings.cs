@@ -6,14 +6,16 @@ namespace Meeting.Models
         public Guid Id { get; set; }
         public string Title { get; set; }
         public Guid ProjectId { get; set; }
-        public Project Project { get; set; }
+        public Project? Project { get; set; }
+        public bool IsArchived { get; set; } = false;
 
         public DateTime Date { get; set; }
         public string Location { get; set; } = "";
         public Guid? TemplateId { get; set; }
         public Template? Template { get; set; }
 
-        public ICollection<TaskItem> Tasks { get; set; }
+        public ICollection<TaskItem>? Tasks { get; set; }
+
     }
 
 }
