@@ -1,7 +1,7 @@
-// src/components/TaskDashboard.js
 import React, { useState, useEffect } from 'react';
 import './TaskDashboard.css';
 import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 
 const TaskDashboard = () => {
     const [projects, setProjects] = useState([]);
@@ -9,28 +9,19 @@ const TaskDashboard = () => {
     const [meetings, setMeetings] = useState([]);
     const [selectedMeetingId, setSelectedMeetingId] = useState('');
     const [tasks, setTasks] = useState([]);
-    const [newTaskData, setNewTaskData] = useState({
-        title: '',
-        description: '',
-        dueDate: '',
-        priority: 'Normal',
-        assignedToUserId: ''
-    });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [selectedAssignedUserName, setSelectedAssignedUserName] = useState('');
-
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [allUsers, setAllUsers] = useState([]);
+    const [selectedFile, setSelectedFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-
-    // *** NOUVEAU: État pour le filtre de tâches ***
-    const [currentFilter, setCurrentFilter] = useState('all'); // 'all', 'today', 'thisWeek', 'urgent', 'assignedToMe'
+    const [currentFilter, setCurrentFilter] = useState('all');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const navigate = useNavigate();
 
     const getAuthToken = () => localStorage.getItem('authToken');
-    const getUserId = () => localStorage.getItem('userId'); // Assuming you store userId in localStorage
+    const getUserId = () => localStorage.getItem('userId');
 
     useEffect(() => {
         const token = getAuthToken();
@@ -38,6 +29,7 @@ const TaskDashboard = () => {
             navigate('/login');
         } else {
             fetchProjects();
+            fetchAllUsers();
         }
     }, [navigate]);
 
@@ -72,6 +64,41 @@ const TaskDashboard = () => {
         }
     };
 
+    const fetchAllUsers = async () => {
+        setLoading(true);
+        setError('');
+        const token = getAuthToken();
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+        try {
+            const response = await fetch('https://localhost:7212/api/Project/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const fetchedUsers = (data.$values || data || []).map(user => ({
+                    id: user.id,
+                    email: user.email,
+                    fullName: user.fullName || user.email.split('@')[0]
+                }));
+                setAllUsers(fetchedUsers);
+            } else if (response.status === 401) {
+                setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                setError('Erreur lors de la récupération des utilisateurs.');
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur lors de la récupération des utilisateurs.');
+            console.error('Fetch all users error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         const fetchMeetings = async () => {
             if (!selectedProjectId) {
@@ -83,7 +110,7 @@ const TaskDashboard = () => {
             setError('');
             const token = getAuthToken();
             try {
-                const response = await fetch(`https://localhost:7212/api/Meeting/project/${selectedProjectId}`, {
+                const response = await fetch(`https://localhost:7212/api/Meeting/project/${selectedProjectId}/active`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
@@ -99,22 +126,22 @@ const TaskDashboard = () => {
                     localStorage.removeItem('authToken');
                     navigate('/login');
                 } else {
-                    setError('Erreur lors de la récupération des réunions.');
+                    setError('Erreur lors de la récupération des réunions actives du projet.');
                 }
             } catch (err) {
                 setError('Erreur réseau ou du serveur.');
-                console.error('Fetch meetings error:', err);
+                console.error('Fetch active project meetings error:', err);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchMeetings();
     }, [selectedProjectId, navigate]);
 
     const fetchTasks = async () => {
         if (!selectedMeetingId) {
             setTasks([]);
+            setSelectedTask(null);
             return;
         }
         setLoading(true);
@@ -127,6 +154,9 @@ const TaskDashboard = () => {
             if (response.ok) {
                 const data = await response.json();
                 setTasks(data.$values || data);
+                if (selectedTask && !(data.$values || data).some(task => task.id === selectedTask.id)) {
+                    setSelectedTask(null);
+                }
             } else if (response.status === 401) {
                 setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
                 localStorage.removeItem('authToken');
@@ -146,18 +176,64 @@ const TaskDashboard = () => {
         fetchTasks();
     }, [selectedMeetingId, navigate]);
 
-
-    const handleNewTaskChange = (e) => {
+    const handleFormChange = (e) => {
         const { name, value } = e.target;
-        setNewTaskData(prevData => ({ ...prevData, [name]: value }));
+        setSelectedTask(prevData => ({
+            ...prevData,
+            [name]: value
+        }));
+    };
 
-        if (name === "assignedToUserId") {
-            const selectedUser = searchResults.find(user => user.id === value);
-            setSelectedAssignedUserName(selectedUser ? (selectedUser.fullName || selectedUser.email) : '');
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type === 'application/pdf') {
+            setSelectedFile(file);
+            setError('');
+        } else {
+            setSelectedFile(null);
+            setError('Seuls les fichiers PDF sont autorisés.');
         }
     };
 
-    const handleCreateTask = async (e) => {
+    const handleAddNewTask = () => {
+        if (!selectedMeetingId) {
+            setError("Veuillez sélectionner une réunion avant d'ajouter une tâche.");
+            return;
+        }
+        setError('');
+        setSuccess('');
+        setSelectedFile(null);
+
+        const tempId = `new-${Date.now()}`;
+        const newTask = {
+            id: tempId,
+            title: 'Nouvelle tâche',
+            description: '',
+            dueDate: '',
+            priority: 'Normal',
+            assignedToUserId: '',
+        };
+        setTasks(prevTasks => [newTask, ...prevTasks]);
+    };
+
+    const handleSelectTask = (task) => {
+        setError('');
+        setSuccess('');
+        setSelectedFile(null);
+        setSelectedTask(task);
+        setIsModalOpen(true);
+    };
+
+    const handleCancelEdit = () => {
+        setTasks(prevTasks => prevTasks.filter(task => !task.id.startsWith('new-')));
+        setSelectedTask(null);
+        setSelectedFile(null);
+        setError('');
+        setSuccess('');
+        setIsModalOpen(false);
+    };
+
+    const handleSaveTask = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -165,154 +241,166 @@ const TaskDashboard = () => {
         const token = getAuthToken();
 
         if (!token) {
-            setError('Vous devez être connecté pour créer une tâche.');
+            setError('Vous devez être connecté pour créer/modifier une tâche.');
             setLoading(false);
             navigate('/login');
             return;
         }
 
         if (!selectedMeetingId) {
-            setError('Veuillez sélectionner une réunion pour créer une tâche.');
+            setError('Veuillez sélectionner une réunion pour créer/modifier une tâche.');
             setLoading(false);
             return;
         }
 
-        const taskToCreate = {
-            ...newTaskData,
-            meetingId: selectedMeetingId,
-            // Ensure dueDate is sent as an ISO string in UTC
-            dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate).toISOString() : null,
+        if (!selectedTask || !selectedTask.title || !selectedTask.dueDate) {
+            setError('Veuillez remplir au moins le titre et la date d\'échéance.');
+            setLoading(false);
+            return;
+        }
+
+        const isNew = typeof selectedTask.id === 'string' && selectedTask.id.startsWith('new-');
+        const taskDataToSend = {
+            title: selectedTask.title,
+            description: selectedTask.description,
+            dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate).toISOString() : null,
+            priority: selectedTask.priority,
+            assignedToUserId: selectedTask.assignedToUserId,
+            meetingId: selectedMeetingId
         };
 
+        if (!isNew) {
+            taskDataToSend.id = selectedTask.id;
+        }
+
+        const method = isNew ? 'POST' : 'PUT';
+        const url = isNew ? 'https://localhost:7212/api/Task' : `https://localhost:7212/api/Task/${selectedTask.id}`;
+
         try {
-            const response = await fetch('https://localhost:7212/api/Task', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(taskToCreate)
+                body: JSON.stringify(taskDataToSend)
             });
 
             if (response.ok) {
-                setNewTaskData({
-                    title: '',
-                    description: '',
-                    dueDate: '',
-                    priority: 'Normal',
-                    assignedToUserId: ''
+                const savedTask = await response.json();
+                setTasks(prevTasks => {
+                    if (isNew) {
+                        return prevTasks.map(task => task.id === selectedTask.id ? savedTask : task);
+                    } else {
+                        return prevTasks.map(task => task.id === savedTask.id ? savedTask : task);
+                    }
                 });
-                setSearchQuery('');
-                setSearchResults([]);
-                setSelectedAssignedUserName('');
-                fetchTasks();
+
+                if (selectedFile) {
+                    await uploadAttachment(selectedMeetingId, selectedFile);
+                }
+                setSelectedFile(null);
+                setSelectedTask(null);
+                setIsModalOpen(false);
             } else if (response.status === 401) {
                 setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
-                const errorText = await response.text();
-                setError(`Erreur lors de la création de la tâche: ${errorText}`);
+                const errorData = await response.json();
+                let errorMessage = `Erreur lors de ${isNew ? 'la création' : 'la mise à jour'} de la tâche.`;
+                if (errorData.errors) {
+                    errorMessage += "\nDétails: ";
+                    for (const key in errorData.errors) {
+                        errorMessage += `\n${key}: ${errorData.errors[key].join(', ')}`;
+                    }
+                } else if (errorData.title) {
+                    errorMessage += `\n${errorData.title}`;
+                }
+                setError(errorMessage);
             }
         } catch (err) {
-            setError('Erreur réseau ou du serveur.');
-            console.error('Create task error:', err);
+            setError(`Erreur réseau ou du serveur lors de ${isNew ? 'la création' : 'la mise à jour'} de la tâche.`);
+            console.error(`${isNew ? 'Create' : 'Update'} task error:`, err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSearchUsers = async () => {
+    const uploadAttachment = async (meetingId, file) => {
         setLoading(true);
         setError('');
         const token = getAuthToken();
 
         if (!token) {
-            setError('Vous devez être connecté pour rechercher des utilisateurs.');
+            setError('Vous devez être connecté pour télécharger des fichiers.');
             setLoading(false);
             navigate('/login');
             return;
         }
 
-        if (!searchQuery.trim()) {
-            setError('Veuillez entrer un terme de recherche pour les utilisateurs.');
-            setSearchResults([]);
-            setLoading(false);
-            return;
-        }
+        const formData = new FormData();
+        formData.append('file', file);
 
         try {
-            const response = await fetch(`https://localhost:7212/api/Auth/users/search?query=${encodeURIComponent(searchQuery)}`, {
+            const response = await fetch(`https://localhost:7212/api/Meeting/${meetingId}/attachments`, {
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                body: formData
             });
 
             if (response.ok) {
                 const data = await response.json();
-                const processedResults = (data.$values || data || []).map(user => ({
-                    id: user.id,
-                    email: user.email,
-                    fullName: user.fullName || user.email.split('@')[0]
-                }));
-                setSearchResults(processedResults);
+                console.log('Attachment uploaded:', data.attachment);
+                setSuccess('Fichier PDF téléchargé avec succès !');
             } else if (response.status === 401) {
-                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                setError('Session expirée ou non autorisé pour le téléchargement. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
                 const errorText = await response.text();
-                setError(`Erreur lors de la recherche des utilisateurs: ${errorText}`);
-                setSearchResults([]);
+                setError(`Erreur lors du téléchargement de l'attachement: ${errorText}`);
             }
         } catch (err) {
-            setError('Erreur réseau ou du serveur.');
-            console.error('Search users error:', err);
-            setSearchResults([]);
+            setError('Erreur réseau ou du serveur lors du téléchargement de l\'attachement.');
+            console.error('Upload attachment error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    // *** MODIFIÉ: Fonction de filtrage des tâches pour gérer les fuseaux horaires ***
     const filterTasks = (tasksToFilter) => {
-        // Get today's date in UTC, set to midnight
         const now = new Date();
         const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-
-        // Calculate end of the current week in UTC
         const endOfWeek = new Date(now);
-        endOfWeek.setDate(now.getDate() + (7 - now.getDay())); // Get to Sunday
+        endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
         const endOfWeekUtc = Date.UTC(endOfWeek.getFullYear(), endOfWeek.getMonth(), endOfWeek.getDate(), 23, 59, 59, 999);
-
-
         const currentUserId = getUserId();
 
-        switch (currentFilter) {
-            case 'today':
-                return tasksToFilter.filter(task => {
+        return tasksToFilter.filter(task => {
+            if (task.id && typeof task.id === 'string' && task.id.startsWith('new-')) return true;
+            switch (currentFilter) {
+                case 'today':
                     if (!task.dueDate) return false;
-                    // Parse task due date as UTC date, and get its UTC components
-                    const taskDueDate = new Date(task.dueDate);
-                    const taskDueUtc = Date.UTC(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate());
-                    return taskDueUtc === todayUtc;
-                });
-            case 'thisWeek':
-                return tasksToFilter.filter(task => {
+                    const taskDueDateToday = new Date(task.dueDate);
+                    const taskDueUtcToday = Date.UTC(taskDueDateToday.getFullYear(), taskDueDateToday.getMonth(), taskDueDateToday.getDate());
+                    return taskDueUtcToday === todayUtc;
+                case 'thisWeek':
                     if (!task.dueDate) return false;
-                    const taskDueDate = new Date(task.dueDate);
-                    const taskDueUtc = Date.UTC(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate());
-                    // Check if taskDueUtc is between todayUtc (inclusive) and endOfWeekUtc (inclusive)
-                    return taskDueUtc >= todayUtc && taskDueUtc <= endOfWeekUtc;
-                });
-            case 'urgent':
-                return tasksToFilter.filter(task => task.priority === 'Urgent');
-            case 'assignedToMe':
-                return tasksToFilter.filter(task => task.assignedToUserId === currentUserId);
-            case 'all':
-            default:
-                return tasksToFilter;
-        }
+                    const taskDueDateWeek = new Date(task.dueDate);
+                    const taskDueUtcWeek = Date.UTC(taskDueDateWeek.getFullYear(), taskDueDateWeek.getMonth(), taskDueDateWeek.getDate());
+                    return taskDueUtcWeek >= todayUtc && taskDueUtcWeek <= endOfWeekUtc;
+                case 'urgent':
+                    return task.priority === 'Urgent';
+                case 'assignedToMe':
+                    return task.assignedToUserId === currentUserId;
+                case 'all':
+                default:
+                    return true;
+            }
+        });
     };
 
     const filteredTasks = filterTasks(tasks);
@@ -325,125 +413,128 @@ const TaskDashboard = () => {
                     : task
             )
         );
-        // You should ideally send an API request here to persist the priority change.
-        // For example: updateTaskPriority(taskId, newPriority);
     };
-
 
     return (
         <div className="task-dashboard-container">
-            <div className="main-content three-column-layout">
-                {/* Left Panel: Smart Lists / Filters */}
-                <div className="left-panel glass-effect">
-                    <h3>Smart Lists</h3>
-                    <ul className="filter-list custom-list">
-                        <li className={currentFilter === 'all' ? 'active' : ''} onClick={() => setCurrentFilter('all')}>
-                            <i className="fas fa-inbox"></i> Toutes les tâches
-                        </li>
-                        <li className={currentFilter === 'today' ? 'active' : ''} onClick={() => setCurrentFilter('today')}>
-                            <i className="fas fa-calendar-day"></i> Aujourd'hui
-                        </li>
-                        <li className={currentFilter === 'thisWeek' ? 'active' : ''} onClick={() => setCurrentFilter('thisWeek')}>
-                            <i className="fas fa-calendar-week"></i> Cette semaine
-                        </li>
-                        <li className={currentFilter === 'urgent' ? 'active' : ''} onClick={() => setCurrentFilter('urgent')}>
-                            <i className="fas fa-exclamation-circle"></i> Urgent
-                        </li>
-                        <li className={currentFilter === 'assignedToMe' ? 'active' : ''} onClick={() => setCurrentFilter('assignedToMe')}>
-                            <i className="fas fa-user-circle"></i> Assigné à moi
-                        </li>
-                    </ul>
-                    <h3 className="mt-40">Projets</h3>
-                    <div className="project-select-group form-group">
-                        <select
-                            id="selectProject"
-                            value={selectedProjectId}
-                            onChange={(e) => setSelectedProjectId(e.target.value)}
-                            required
-                        >
-                            <option value="">-- Choisir un projet --</option>
-                            {projects.map(project => (
-                                <option key={project.id} value={project.id}>{project.name}</option>
-                            ))}
-                        </select>
-                        {projects.length === 0 && !loading && <p className="no-items-message">Aucun projet disponible.</p>}
-                    </div>
-                    <h3 className="mt-40">Réunions</h3>
-                    <div className="meeting-select-group form-group">
-                        <select
-                            id="selectMeeting"
-                            value={selectedMeetingId}
-                            onChange={(e) => setSelectedMeetingId(e.target.value)}
-                            required
-                            disabled={!selectedProjectId || meetings.length === 0}
-                        >
-                            <option value="">-- Choisir une réunion --</option>
-                            {meetings.map(meeting => (
-                                <option key={meeting.id} value={meeting.id}>
-                                    {meeting.title} ({new Date(meeting.date).toLocaleDateString()})
-                                </option>
-                            ))}
-                        </select>
-                        {!selectedProjectId && <p className="hint-message">Sélectionnez un projet d'abord.</p>}
-                        {selectedProjectId && meetings.length === 0 && !loading && <p className="no-items-message">Aucune réunion pour ce projet.</p>}
-                    </div>
+            <div className="navbar glass-effect">
+<div className="filter-badges">
+    <span className={`badge ${currentFilter === 'all' ? 'active' : ''}`} onClick={() => setCurrentFilter('all')}>
+        <i className="fas fa-inbox"></i> Toutes
+    </span>
+    <span className={`badge ${currentFilter === 'today' ? 'active' : ''}`} onClick={() => setCurrentFilter('today')}>
+        <i className="fas fa-calendar-day"></i> Aujourd'hui
+    </span>
+    <span className={`badge ${currentFilter === 'thisWeek' ? 'active' : ''}`} onClick={() => setCurrentFilter('thisWeek')}>
+        <i className="fas fa-calendar-week"></i> Semaine
+    </span>
+    <span className={`badge ${currentFilter === 'urgent' ? 'active' : ''}`} onClick={() => setCurrentFilter('urgent')}>
+        <i className="fas fa-exclamation-circle"></i> Urgent
+    </span>
+    <span className={`badge ${currentFilter === 'assignedToMe' ? 'active' : ''}`} onClick={() => setCurrentFilter('assignedToMe')}>
+        <i className="fas fa-user-circle"></i> À moi
+    </span>
+</div>
 
-
+                <div className="select-group">
+                    <select
+                        id="selectProject"
+                        value={selectedProjectId}
+                        onChange={(e) => setSelectedProjectId(e.target.value)}
+                        required
+                    >
+                        <option value="">-- Choisir un projet --</option>
+                        {projects.map(project => (
+                            <option key={project.id} value={project.id}>{project.name}</option>
+                        ))}
+                    </select>
+                    <select
+                        id="selectMeeting"
+                        value={selectedMeetingId}
+                        onChange={(e) => setSelectedMeetingId(e.target.value)}
+                        required
+                        disabled={!selectedProjectId || meetings.length === 0}
+                    >
+                        <option value="">-- Choisir une réunion --</option>
+                        {meetings.map(meeting => (
+                            <option key={meeting.id} value={meeting.id}>
+                                {meeting.title} ({new Date(meeting.date).toLocaleDateString()})
+                            </option>
+                        ))}
+                    </select>
                 </div>
+            </div>
 
-                {/* Middle Panel: Task List */}
-                <div className="middle-panel glass-effect">
-                    <h3>Tâches {
-                        currentFilter === 'all' ? 'de la réunion' :
-                        currentFilter === 'today' ? "d'aujourd'hui" :
-                        currentFilter === 'thisWeek' ? 'de cette semaine' :
-                        currentFilter === 'urgent' ? 'urgentes' :
-                        currentFilter === 'assignedToMe' ? 'qui me sont assignées' : ''
-                    } ({meetings.find(m => m.id === selectedMeetingId)?.title || 'N/A'})</h3>
+            {/* Section des tâches */}
+            <div className="main-content">
+                <div className="task-section glass-effect">
+                    <div className="panel-header-with-button">
+                        <h3>
+                            Tâches {
+                                currentFilter === 'all' ? 'de la réunion' :
+                                    currentFilter === 'today' ? "d'aujourd'hui" :
+                                        currentFilter === 'thisWeek' ? 'de cette semaine' :
+                                            currentFilter === 'urgent' ? 'urgentes' :
+                                                currentFilter === 'assignedToMe' ? 'qui me sont assignées' : ''
+                            } ({meetings.find(m => m.id === selectedMeetingId)?.title || 'N/A'})
+                        </h3>
+
+                        <Plus
+                            className="add-item-button"
+                            onClick={handleAddNewTask}
+                            disabled={!selectedMeetingId}
+                            title={!selectedMeetingId ? "Sélectionnez une réunion pour ajouter une tâche" : "Ajouter une nouvelle tâche"}
+                        />
+                    </div>
                     {loading && <p className="loading-message">Chargement des tâches...</p>}
                     {error && <div className="error-message">{error}</div>}
                     <ul className="task-list custom-list">
                         {filteredTasks.length === 0 && !loading && !error && selectedMeetingId && <p className="no-items-message">Aucune tâche pour cette sélection.</p>}
+                        {!selectedMeetingId && <p className="no-items-message">Sélectionnez une réunion pour voir les tâches.</p>}
                         {filteredTasks.map(task => (
-                            <li key={task.id} className={`priority-${task.priority.toLowerCase()}`}>
+                            <li
+                                key={task.id}
+                                className={`priority-${(task.priority || 'Normal').toLowerCase()} ${selectedTask && selectedTask.id === task.id ? 'selected-card' : ''}`}
+                                onClick={() => handleSelectTask(task)}
+                            >
                                 <div className="task-header">
-                                    <strong>{task.title}</strong>
+                                    <strong>{task.title || "Nouvelle tâche"}</strong>
                                     <div className="task-actions">
-                                        {/* *** NOUVEAU: icône urgent cliquable *** */}
                                         <i
                                             className={`fas fa-exclamation-triangle urgent-icon ${task.priority === 'Urgent' ? 'active' : ''}`}
-                                            onClick={() => toggleUrgentPriority(task.id)}
+                                            onClick={(e) => { e.stopPropagation(); toggleUrgentPriority(task.id); }}
                                             title="Basculer la priorité Urgent"
                                         ></i>
-                                        <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>{task.priority}</span>
+                                        <span className={`priority-badge priority-${(task.priority || 'Normal').toLowerCase()}`}>{task.priority || 'N/A'}</span>
                                     </div>
                                 </div>
-                                <p className="task-description">{task.description}</p>
+                                <p className="task-description">{task.description || "Aucune description"}</p>
                                 <div className="task-meta">
                                     <span><i className="fas fa-calendar-alt"></i> Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</span>
-                                    <span><i className="fas fa-user-circle"></i> Assigné à: {task.assignedTo?.fullName || 'N/A'}</span>
+                                    <span><i className="fas fa-user-circle"></i> Assigné à: {
+                                        allUsers.find(user => user.id === task.assignedToUserId)?.fullName || 'N/A'
+                                    }</span>
                                 </div>
                             </li>
                         ))}
                     </ul>
                 </div>
+            </div>
 
-                {/* Right Panel: Add/Edit Task Form */}
-                <div className="right-panel glass-effect">
-                    {success && <div className="success-message">{success}</div>}
-                    {error && <div className="error-message">{error}</div>}
-
-                    <div className="glassy-card">
-                        <h4>Créer une nouvelle tâche</h4>
-                        <form onSubmit={handleCreateTask}>
+            {/* Pop-up (Modal) */}
+            {isModalOpen && selectedTask && (
+                <div className="modal-overlay">
+                    <div className="modal-content glass-effect">
+                        <h4>{selectedTask && typeof selectedTask.id === 'string' && selectedTask.id.startsWith('new-') ? 'Créer une nouvelle tâche' : 'Modifier la tâche'}</h4>
+                        <form onSubmit={handleSaveTask}>
                             <div className="form-group">
                                 <label htmlFor="taskTitle">Titre de la tâche</label>
                                 <input
                                     type="text"
                                     id="taskTitle"
                                     name="title"
-                                    value={newTaskData.title}
-                                    onChange={handleNewTaskChange}
+                                    value={selectedTask?.title || ''}
+                                    onChange={handleFormChange}
                                     placeholder="Ex: Préparer la présentation"
                                     required
                                 />
@@ -453,8 +544,8 @@ const TaskDashboard = () => {
                                 <textarea
                                     id="taskDescription"
                                     name="description"
-                                    value={newTaskData.description}
-                                    onChange={handleNewTaskChange}
+                                    value={selectedTask?.description || ''}
+                                    onChange={handleFormChange}
                                     placeholder="Détails de la tâche..."
                                     rows="3"
                                 ></textarea>
@@ -465,8 +556,8 @@ const TaskDashboard = () => {
                                     type="date"
                                     id="taskDueDate"
                                     name="dueDate"
-                                    value={newTaskData.dueDate}
-                                    onChange={handleNewTaskChange}
+                                    value={selectedTask?.dueDate ? new Date(selectedTask.dueDate).toISOString().split('T')[0] : ''}
+                                    onChange={handleFormChange}
                                     required
                                 />
                             </div>
@@ -475,8 +566,8 @@ const TaskDashboard = () => {
                                 <select
                                     id="taskPriority"
                                     name="priority"
-                                    value={newTaskData.priority}
-                                    onChange={handleNewTaskChange}
+                                    value={selectedTask?.priority || 'Normal'}
+                                    onChange={handleFormChange}
                                 >
                                     <option value="Low">Basse</option>
                                     <option value="Normal">Normale</option>
@@ -484,62 +575,57 @@ const TaskDashboard = () => {
                                     <option value="Urgent">Urgente</option>
                                 </select>
                             </div>
-
-                            <div className="form-group search-user-group">
-                                <label htmlFor="assignToUser">Assigner à</label>
+                            <div className="form-group">
+                                <label htmlFor="selectAssignedUser">Assigner à</label>
+                                <select
+                                    id="selectAssignedUser"
+                                    name="assignedToUserId"
+                                    value={selectedTask?.assignedToUserId || ''}
+                                    onChange={handleFormChange}
+                                    required
+                                >
+                                    <option value="">-- Choisir un utilisateur --</option>
+                                    {allUsers.map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.fullName || user.email}
+                                        </option>
+                                    ))}
+                                </select>
+                                {allUsers.length === 0 && !loading && <p className="no-items-message">Aucun utilisateur disponible.</p>}
+                            </div>
+                            {selectedTask?.assignedToUserId && (
+                                <p className="selected-user-hint">
+                                    Assigné à: <strong>{allUsers.find(u => u.id === selectedTask.assignedToUserId)?.fullName || 'N/A'}</strong>
+                                </p>
+                            )}
+                            <div className="form-group">
+                                <label htmlFor="taskAttachment">Attachement</label>
                                 <input
-                                    type="text"
-                                    id="assignToUser"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Rechercher par nom ou email"
+                                    type="file"
+                                    id="taskAttachment"
+                                    name="attachment"
+                                    accept=".pdf"
+                                    onChange={handleFileChange}
                                 />
-                                <button type="button" onClick={handleSearchUsers} disabled={loading || !searchQuery.trim()} className="glass-button small-button">
-                                    Rechercher
+                                {selectedFile && <p className="file-info">Fichier sélectionné: {selectedFile.name}</p>}
+                                {error.includes('fichiers PDF sont autorisés') && <div className="error-message">{error}</div>}
+                            </div>
+                            <div className="modal-actions">
+                                <button
+                                    type="submit"
+                                    disabled={loading || !selectedMeetingId || !getAuthToken()}
+                                    className="glass-button"
+                                >
+                                    {loading ? 'Chargement...' : (typeof selectedTask.id === 'string' && selectedTask.id.startsWith('new-') ? 'Créer la tâche' : 'Mettre à jour la tâche')}
+                                </button>
+                                <button type="button" onClick={handleCancelEdit} className="glass-button cancel-button" disabled={loading}>
+                                    Annuler
                                 </button>
                             </div>
-
-                            {searchResults.length > 0 && (
-                                <div className="search-results-list form-group">
-                                    <label htmlFor="selectAssignedUser">Sélectionner un responsable:</label>
-                                    <select
-                                        id="selectAssignedUser"
-                                        name="assignedToUserId"
-                                        value={newTaskData.assignedToUserId}
-                                        onChange={handleNewTaskChange}
-                                        required
-                                    >
-                                        <option value="">-- Choisir un utilisateur --</option>
-                                        {searchResults.map(user => (
-                                            <option key={user.id} value={user.id}>
-                                                {user.fullName || user.email} ({user.email})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            {searchResults.length === 0 && searchQuery.trim() && !loading && (
-                                <p className="no-results">Aucun utilisateur trouvé pour "{searchQuery}".</p>
-                            )}
-                            {newTaskData.assignedToUserId && selectedAssignedUserName && (
-                                <p className="selected-user-hint">
-                                    Assigné à: <strong>{selectedAssignedUserName}</strong>
-                                </p>
-                            )}
-                            {newTaskData.assignedToUserId && !selectedAssignedUserName && (
-                                <p className="selected-user-hint">
-                                    Assigné à: (Chargement du nom...)
-                                </p>
-                            )}
-
-                            <button type="submit" disabled={loading || !selectedMeetingId || !getAuthToken()} className="glass-button">
-                                {loading ? 'Création...' : 'Créer la tâche'}
-                            </button>
-                            {!getAuthToken() && <p className="auth-hint">Connectez-vous pour créer une tâche.</p>}
                         </form>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

@@ -17,6 +17,8 @@ namespace Meeting.Data
         public DbSet<Template> Templates { get; set; }
         public DbSet<TaskItem> Tasks { get; set; }
 
+        public DbSet<MeetingAttachment> MeetingAttachments { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ProjectUser>()

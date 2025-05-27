@@ -1,0 +1,138 @@
+
+.md-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; 
+    animation: fadeIn 0.3s ease-out;
+    border-radius: 15px;
+}
+
+.md-modal-content {
+    background: rgba(255, 255, 255, 0.15); 
+    backdrop-filter: blur(15px); 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px; 
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    padding: 30px;
+    width: 90%;
+    max-width: 600px; 
+    color: var(--text-color); 
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: slideIn 0.3s ease-out;
+}
+.scrollable-table {
+    max-height: 300px; 
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.scrollable-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.scrollable-table th,
+.scrollable-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ccc;
+}
+
+.md-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.md-modal-header h3 {
+    margin: 0;
+    font-size: 1.8em; /* Larger heading */
+    color: var(--accent-color); /* Highlight header */
+}
+
+.md-close-button {
+    background: none;
+    border: none;
+    font-size: 2em;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.md-close-button:hover {
+    color: #ff6b6b; /* Red on hover */
+    transform: scale(1.1);
+}
+
+.md-glass-textarea {
+    width: calc(100% - 20px); /* Account for padding */
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.2); /* Darker internal background */
+    color: var(--text-color);
+    font-size: 1.1em;
+    resize: vertical; /* Allow vertical resizing */
+    min-height: 150px; /* Minimum height for the textarea */
+    font-family: inherit; /* Inherit font from body */
+}
+
+.md-glass-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.md-glass-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.4); /* Accent glow */
+}
+
+.md-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.md-button-primary {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.md-button-primary:hover {
+    background-color: #ff6347;
+    transform: translateY(-2px);
+}
+
+.md-button-secondary {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.md-button-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}

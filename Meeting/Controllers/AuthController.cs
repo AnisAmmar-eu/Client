@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Authorization; // N'oubliez pas ce using si vous utilisez [Authorize]
+using Microsoft.AspNetCore.Authorization; 
 
 namespace Admin.Controllers
 {
@@ -46,8 +46,6 @@ namespace Admin.Controllers
             return Ok(new { token });
         }
 
-        // NOUVEL ENDPOINT POUR LA RECHERCHE D'UTILISATEURS
-        // La route complète sera /api/Auth/users/search
         [HttpGet("users/search")]
         // [Authorize] // Décommentez cette ligne si seuls les utilisateurs authentifiés peuvent effectuer la recherche
         public async Task<IActionResult> SearchUsers([FromQuery] string query)

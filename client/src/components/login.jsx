@@ -1,8 +1,8 @@
 // src/components/Login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../App.css'; // Pour les styles globaux glassy
-import './Login.css'; // Pour les styles spécifiques au login
+import '../App.css'; // For global glassy styles
+import './Login.css'; // For login-specific styles
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -28,9 +28,8 @@ const Login = () => {
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem('authToken', data.token); // Store the token
-                // Déclencher un événement de stockage pour informer MainLayout
-                window.dispatchEvent(new Event('storage'));
-                navigate('/dashboard'); // Rediriger vers le tableau de bord
+                window.dispatchEvent(new Event('storage')); // Trigger storage event
+                navigate('/projects'); // Redirect to dashboard
             } else {
                 const errorData = await response.json();
                 setError(errorData.message || 'Échec de la connexion. Veuillez vérifier vos identifiants.');
@@ -77,8 +76,19 @@ const Login = () => {
                     </button>
                 </form>
                 <p className="forgot-password-link">
-                    <a href="#" onClick={(e) => { e.preventDefault(); alert('Fonctionnalité de réinitialisation de mot de passe à implémenter.'); }}>Mot de passe oublié ?</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); }}>Mot de passe oublié ?</a>
                 </p>
+
+                <div className="register-redirect mt-20"> 
+                    <p>Pas encore de compte ?</p>
+                    <button
+                        className="glass-button register-button-secondary" 
+                        onClick={() => navigate('/register')}
+                    >
+                        S'inscrire
+                    </button>
+                </div>
+
             </div>
         </div>
     );

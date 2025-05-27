@@ -8,5 +8,4 @@
         public string NonObjectives { get; set; }
         public string Agenda { get; set; }
     }
-
 }

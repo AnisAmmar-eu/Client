@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import './Login.css'; // On réutilise le même fichier CSS pour le design général
+import { useNavigate } from 'react-router-dom';
+import '../App.css'; 
+import './Login.css'; 
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -8,6 +10,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleEmailChange = (event) => {
     setEmail(event.target.value);
@@ -34,12 +37,12 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('https://localhost:7212/api/Auth/register', { // Adaptez l'URL de votre API d'enregistrement
+      const response = await fetch('https://localhost:7212/api/Auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }), // Votre API attend un objet User avec Email et Password
+        body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
@@ -47,13 +50,12 @@ const Register = () => {
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        // Optionnel: Rediriger l'utilisateur vers la page de connexion après un délai
         setTimeout(() => {
-          window.location.href = '/login'; // Assurez-vous que cette route existe
+          navigate('/login'); 
         }, 2000);
       } else {
-        const errorData = await response.text(); // Utilisez text() pour un message d'erreur simple, ou json() si l'API retourne un objet
-        setError(errorData || 'Une erreur s\'est produite lors de l\'inscription.');
+        const errorData = await response.json(); 
+        setError(errorData.message || 'Une erreur s\'est produite lors de l\'inscription.');
       }
     } catch (error) {
       setError('Impossible de se connecter au serveur pour l\'inscription.');
@@ -64,35 +66,26 @@ const Register = () => {
   };
 
   return (
-    <div className="login-container"> {/* On réutilise le conteneur de style */}
-      <div className="login-form"> {/* On réutilise la classe de formulaire */}
-        <h2>Créer un compte</h2>
+    <div className="login-container">
+      <div className="login-panel glass-effect"> 
+        <h2 className="login-title">Créer un compte</h2>
+        <p className="login-subtitle">Rejoignez-nous et commencez à gérer vos projets !</p> 
         {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>} {/* Message de succès */}
-        <form onSubmit={handleSubmit}>
+        {success && <div className="success-message">{success}</div>}
+        <form onSubmit={handleSubmit} className="login-form"> 
           <div className="form-group">
-            <label htmlFor="email">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="icon">
-                <path d="M12 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-10c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-              </svg>
-              Email
-            </label>
+            <label htmlFor="email">Email</label>
             <input
-              type="email" // <--- C'est important !
+              type="email"
               id="email"
               value={email}
               onChange={handleEmailChange}
-              placeholder="Votre email"
+              placeholder="votre.email@example.com"
               required
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="icon">
-                <path d="M12 17a2 2 0 01-2-2 2 2 0 012-2 2 2 0 012 2 2 2 0 01-2 2zm6-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2h-4zm-8 0c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2H6z" />
-              </svg>
-              Mot de passe
-            </label>
+            <label htmlFor="password">Mot de passe</label> 
             <input
               type="password"
               id="password"
@@ -103,12 +96,7 @@ const Register = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="icon">
-                <path d="M12 17a2 2 0 01-2-2 2 2 0 012-2 2 2 0 012 2 2 2 0 01-2 2zm6-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2h-4zm-8 0c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2H6z" />
-              </svg>
-              Confirmer le mot de passe
-            </label>
+            <label htmlFor="confirmPassword">Confirmer le mot de passe</label> 
             <input
               type="password"
               id="confirmPassword"
@@ -118,20 +106,17 @@ const Register = () => {
               required
             />
           </div>
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading} className="glass-button login-button"> 
             {loading ? 'Inscription...' : 'S\'inscrire'}
           </button>
         </form>
-        <div className="register-redirect">
-          <p>Déjà un compte? </p>
-          <button
-            className="register-button"
-            onClick={() => window.location.href = '/login'}
-          >
+        <p className="forgot-password-link" style={{ whiteSpace: 'nowrap' }}>
+          Déjà un compte?{' '}
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>
             Se connecter
-          </button>
+          </a>
+        </p>
 
-        </div>
       </div>
     </div>
   );

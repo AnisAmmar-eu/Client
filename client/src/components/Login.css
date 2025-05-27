@@ -1,4 +1,4 @@
-/* src/components/Login.css */
+@import './responsive.css';
 
 .login-container {
     display: flex;
@@ -6,8 +6,8 @@
     align-items: center;
     min-height: 100vh;
     width: 100%;
-    position: relative; /* Pas absolute, le background animé est sur body::before */
-    z-index: 1; /* S'assurer qu'il est au-dessus du background animé */
+    position: relative; 
+    z-index: 1; 
 }
 
 .login-panel {
@@ -15,8 +15,7 @@
     max-width: 500px;
     width: 90%;
     text-align: center;
-    /* Applique la classe .glass-effect qui vient de App.css */
-    border-radius: 25px; /* Un peu plus grand pour un look plus "premium" */
+    border-radius: 25px; 
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
@@ -59,4 +58,15 @@
 .forgot-password-link a:hover {
     color: var(--header-color);
     text-decoration: underline;
+}
+/* Responsive adjustments for three-column layout */
+@media (max-width: 992px) {
+    .main-content.three-column-layout {
+        grid-template-columns: 1fr; /* Empiler tout */
+    }
+    .left-panel, .middle-panel, .right-panel {
+        max-width: 100%;
+        min-width: unset;
+        flex-basis: auto;
+    }
 }

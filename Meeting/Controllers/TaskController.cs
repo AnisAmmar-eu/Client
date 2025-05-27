@@ -49,6 +49,35 @@ namespace Admin.Controllers
 
             return Ok(task);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateTask(Guid id, [FromBody] TaskItem updatedTask)
+        {
+            if (id != updatedTask.Id)
+                return BadRequest("Task ID mismatch.");
+
+            var existingTask = await _db.Tasks.FindAsync(id);
+            if (existingTask == null)
+                return NotFound("Task not found.");
+
+            // Vérification si l'utilisateur assigné existe
+            var userExists = await _db.Users.AnyAsync(u => u.Id == updatedTask.AssignedToUserId);
+            if (!userExists)
+                return BadRequest("Assigned user does not exist.");
+
+            // Mettre à jour les champs nécessaires
+            existingTask.Title = updatedTask.Title;
+            existingTask.Description = updatedTask.Description;
+            existingTask.DueDate = updatedTask.DueDate;
+            existingTask.Priority = updatedTask.Priority;
+            existingTask.AssignedToUserId = updatedTask.AssignedToUserId;
+            existingTask.MeetingId = updatedTask.MeetingId;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(existingTask);
+        }
+
     }
+
 
 }

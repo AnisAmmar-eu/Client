@@ -21,7 +21,7 @@ namespace Admin.Controllers
             _db = db;
         }
 
-        [HttpGet]
+        [HttpGet("templates")]
         public async Task<IActionResult> GetTemplates()
         {
             var templates = await _db.Templates.ToListAsync();

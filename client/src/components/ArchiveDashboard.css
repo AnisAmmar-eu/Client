@@ -1,34 +1,128 @@
-/* ArchiveDashboard.css */
+@import './responsive.css';
 
 .archive-dashboard-container {
-    padding: 20px;
-    background: var(--background-gradient); /* Ensure you have a background */
-    min-height: calc(100vh - var(--header-height)); /* Adjust based on your header */
+    background: var(--background-gradient); 
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    height: 100vh;
+    padding-left: 40px;
 }
 
 .main-content.archive-layout {
     display: grid;
-    grid-template-columns: 1fr 2fr; /* List on left, details on right */
-    gap: 30px; /* Space between panels */
-    width: 90%; /* Adjust as needed */
-    max-width: 1400px; /* Max width for the content */
+    grid-template-columns: 1fr 2fr; 
+    gap: 30px; 
+    width: 90%; 
+    max-width: 1400px; 
+    height: 99.4vh;
+    padding-left: 10px;
 }
 
-.archive-list-panel,
-.archive-detail-panel {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+.archive-list-panel{
+    background: rgb(0,0,0,30%);
+    backdrop-filter: blur(50px);
+    border: 1px solid rgb(0,0,0,30%);
+    border-radius: none;
+    padding: 20px;
+    box-shadow: 0 8px 15px 0 rgba(0, 0, 0, 0.3);
     color: var(--text-color-primary);
-    overflow-y: auto; /* Enable scrolling for content within panels */
-    max-height: 85vh; /* Limit height of panels */
+    overflow-y: auto; 
+    max-height: 88.8vh;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    border-top-right-radius: 0px; 
+    margin-top: -2px;
+
+    
 }
+.archive-detail-panel {
+    background: rgb(0, 0, 0, 30%);
+    backdrop-filter: blur(50px);
+    border: 1px solid rgb(0,0,0,30%);
+    border-radius: none;
+    padding: 20px;
+    box-shadow: 0 8px 15px 0 rgba(0, 0, 0, 0.3);
+    color: var(--text-color-primary);
+    overflow-y: auto; 
+    max-height: 88.8vh; 
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 75px;
+    border-top-right-radius: 75px;
+        margin-top: -2px;
+
+}
+
+
+.archive-detail-panel {
+    overflow-x: hidden; 
+}
+
+.archive-list-panel::-webkit-scrollbar,
+.document-list::-webkit-scrollbar,
+.entries-list::-webkit-scrollbar,
+.linked-list::-webkit-scrollbar,
+.tasks-list::-webkit-scrollbar {
+    width: 8px; 
+    height: 0px; 
+    background-color: transparent; 
+}
+
+.archive-list-panel::-webkit-scrollbar-thumb,
+.document-list::-webkit-scrollbar-thumb,
+.entries-list::-webkit-scrollbar-thumb,
+.linked-list::-webkit-scrollbar-thumb,
+.tasks-list::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2); 
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box; 
+}
+
+.archive-list-panel::-webkit-scrollbar-track,
+.document-list::-webkit-scrollbar-track,
+.entries-list::-webkit-scrollbar-track,
+.linked-list::-webkit-scrollbar-track,
+.tasks-list::-webkit-scrollbar-track {
+    background-color: transparent; 
+}
+
+.archive-detail-panel::-webkit-scrollbar {
+    width: 8px; 
+    height: 0px; 
+    background-color: transparent;
+}
+
+.archive-detail-panel::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.archive-detail-panel::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+
+/* Pour Firefox */
+.archive-list-panel,
+.document-list,
+.entries-list,
+.linked-list,
+.tasks-list {
+    scrollbar-width: thin; 
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent; 
+}
+
+.archive-detail-panel {
+    scrollbar-width: thin; 
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent; 
+    overflow-x: hidden; 
+}
+
 
 .archive-list-panel h3,
 .archive-detail-panel h2,
@@ -76,7 +170,7 @@
 }
 
 .archive-list-panel ul.custom-list li.active {
-    background: var(--accent-gradient); /* Use a noticeable active color */
+    background: var(--accent-gradient); 
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
@@ -86,7 +180,7 @@
 .archive-list-panel ul.custom-list li.active .item-header strong,
 .archive-list-panel ul.custom-list li.active .item-meta,
 .archive-list-panel ul.custom-list li.active .item-type {
-    color: white; /* Ensure text is visible on active background */
+    color: white; 
 }
 
 
@@ -103,8 +197,8 @@
 }
 
 .archive-list-panel .item-type {
-    background-color: var(--tag-bg-color); /* Darker tag background */
-    color: var(--tag-text-color); /* Lighter tag text */
+    background-color: var(--tag-bg-color); 
+    color: var(--tag-text-color); 
     padding: 5px 10px;
     border-radius: 5px;
     font-size: 0.8em;
@@ -145,7 +239,7 @@
 }
 
 .detail-card {
-    background: rgba(255, 255, 255, 0.05); /* Slightly darker than panel background */
+    background: rgba(255, 255, 255, 0.05); 
     border-radius: 10px;
     padding: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -205,13 +299,13 @@
 }
 
 .document-list li .pdf-icon {
-    color: #e74c3c; /* Red for PDF icon */
+    color: #e74c3c;
     margin-right: 10px;
     font-size: 1.2em;
 }
 
 .document-list li a, .linked-list li a {
-    color: var(--link-color); /* Your link color */
+    color: var(--link-color); 
     text-decoration: none;
     transition: color 0.2s ease;
 }
@@ -278,17 +372,20 @@
     color: var(--text-color-secondary);
     padding: 20px;
     font-style: italic;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 55px;
+    border-top-right-radius: 55px; 
 }
 
 .no-items-message.full-height-message {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%; /* Make it take full height of its container */
-    min-height: 200px; /* Ensure a minimum height for visibility */
+    height: 100%; 
+    min-height: 200px; 
 }
 
-/* Form Group (for project selection) */
 .form-group.project-select-group {
     margin-bottom: 20px;
 }
@@ -322,7 +419,7 @@
 }
 
 .form-group.project-select-group select option {
-    background-color: var(--dark-glass-background); /* Darker background for options */
+    background-color: var(--dark-glass-background); 
     color: var(--text-color-primary);
 }
 
@@ -330,24 +427,23 @@
 .mb-20 {
     margin-bottom: 20px;
 }
-/* ArchiveDashboard.css - Add or verify these styles */
 
-/* General list styling similar to custom-list but specific for entries/tasks */
-.entries-list, .tasks-list { /* Combined for consistency */
+
+.entries-list, .tasks-list { 
     list-style: none;
     padding: 0;
-    margin: 15px 0; /* Add some margin around the list */
+    margin: 15px 0; 
 }
 
 .entry-item {
-    background: rgba(255, 255, 255, 0.4); /* Glass effect background for each item */
+    background: rgba(255, 255, 255, 0.4); 
     border-radius: 10px;
     padding: 15px;
     margin-bottom: 10px;
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-left: 5px solid #6c757d; /* A subtle border for visual separation, e.g., grey */
+    border-left: 5px solid #6c757d; 
 }
 
 .entry-item:hover {
@@ -359,12 +455,12 @@
     display: flex;
     align-items: baseline;
     margin-bottom: 8px;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    flex-wrap: wrap; 
 }
 
 .entry-id {
     font-weight: bold;
-    color: #007bff; /* Blue for ID */
+    color: #007bff; 
     margin-right: 10px;
     font-size: 0.9em;
 }
@@ -373,7 +469,7 @@
     font-weight: bold;
     font-size: 1.1em;
     color: #1a1a1a;
-    flex-grow: 1; /* Allow text to take remaining space */
+    flex-grow: 1; 
 }
 
 .entry-meta-info {
@@ -382,20 +478,20 @@
     align-items: center;
     font-size: 0.85em;
     color: #777;
-    margin-top: 10px; /* Space between main info and meta info */
+    margin-top: 10px; 
     flex-wrap: wrap;
 }
 
 .entry-meta-info span {
-    display: flex; /* For icon and text alignment */
+    display: flex; 
     align-items: center;
-    margin-right: 15px; /* Space between meta items */
-    margin-bottom: 5px; /* For wrapping */
+    margin-right: 15px; 
+    margin-bottom: 5px; 
 }
 
 .entry-meta-info i {
     margin-right: 5px;
-    color: #555; /* Icon color */
+    color: #555; 
 }
 
 .entry-responsible {
@@ -404,22 +500,22 @@
 }
 
 .entry-dates {
-    white-space: nowrap; /* Keep dates on one line if possible */
+    white-space: nowrap; 
 }
 
 .entry-due-date {
     font-weight: bold;
-    color: #dc3545; /* Red for due date */
+    color: #dc3545; 
 }
 
 .entry-notes {
     font-size: 0.9em;
     color: #555;
     margin-top: 10px;
-    background: rgba(0, 0, 0, 0.05); /* Slightly darker background for notes */
+    background: rgba(0, 0, 0, 0.05); 
     padding: 10px;
     border-radius: 8px;
-    border-left: 3px solid #ced4da; /* Light border for notes */
+    border-left: 3px solid #ced4da; 
 }
 
 .entry-notes i {
@@ -427,7 +523,6 @@
     color: #6c757d;
 }
 
-/* Task Status Badges (similar to priority badges in TaskDashboard.css) */
 .task-status {
     padding: 5px 10px;
     border-radius: 5px;
@@ -436,27 +531,25 @@
     color: white;
     min-width: 70px;
     text-align: center;
-    margin-left: 10px; /* Space from title */
-    text-transform: capitalize; /* Make status look nice */
+    margin-left: 10px; 
+    text-transform: capitalize; 
 }
 
-.task-status.completed { background-color: #28a745; } /* Green */
-.task-status.pending { background-color: #ffc107; color: #333; } /* Yellow */
-.task-status.inprogress { background-color: #007bff; } /* Blue */
-.task-status.cancelled { background-color: #dc3545; } /* Red */
-/* Add more status styles as needed */
+.task-status.completed { background-color: #28a745; } 
+.task-status.pending { background-color: #ffc107; color: #333; } 
+.task-status.inprogress { background-color: #007bff; } 
+.task-status.cancelled { background-color: #dc3545; } 
 
-/* Project dropdown styling */
 .project-dropdown {
     width: 100%;
     padding: 10px;
     border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.3); /* Glass effect */
+    background: rgba(255, 255, 255, 0.3); 
     color: #333;
     font-size: 1rem;
     margin-bottom: 15px;
-    -webkit-appearance: none; /* Remove default browser styling */
+    -webkit-appearance: none; 
     -moz-appearance: none;
     appearance: none;
     background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C197.6l-133.2-133.2c-5.8-5.8-15.2-5.8-21%2C0L5.4%2C197.6c-7.2%2C7.2-2.1%2C19.4%2C8.5%2C19.4h264.4C289.1%2C217%2C294.2%2C204.8%2C287%2C197.6z%22%2F%3E%3C%2Fsvg%3E');
@@ -474,11 +567,33 @@
 }
 
 .project-dropdown option {
-    background-color: #f0f2f5; /* Consistent background for options */
+    background-color: #f0f2f5; 
     color: #333;
 }
 
 .project-dropdown option:checked {
-    background-color: #007bff; /* Highlight selected option */
+    background-color: #007bff; 
     color: white;
+}
+@media (max-width: 992px) {
+    .main-content.three-column-layout {
+        grid-template-columns: 1fr; 
+    }
+    .left-panel, .middle-panel, .right-panel {
+        max-width: 100%;
+        min-width: unset;
+        flex-basis: auto;
+    }
+}
+.delete-meeting-icon {
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    color: #d9534f; 
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.delete-meeting-icon:hover {
+    transform: scale(1.1);
+    color: #c9302c;
 }

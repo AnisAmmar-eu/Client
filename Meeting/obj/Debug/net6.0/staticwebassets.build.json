@@ -1,11 +1,19 @@
 {
   "Version": 1,
-  "Hash": "xCfgwuyEv3XKyfopXYrPHQLn2/b/AOd5VaWJGW6OjzQ=",
+  "Hash": "IjjdYfArFT1g/3UGv7wHxKU6JiDJmDW86ICA5Dn1SI0=",
   "Source": "Meeting",
   "BasePath": "_content/Meeting",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "Meeting\\wwwroot",
+      "Source": "Meeting",
+      "ContentRoot": "C:\\Users\\Anis\\doc\\Client\\Meeting\\wwwroot\\",
+      "BasePath": "_content/Meeting",
+      "Pattern": "**"
+    }
+  ],
   "Assets": []
 }

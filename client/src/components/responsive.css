@@ -1,0 +1,27 @@
+
+/* Mobile First */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+        font-size: 14px;
+    }
+    .hide-on-mobile {
+        display: none;
+    }
+}
+
+/* Tablet */
+@media (min-width: 601px) and (max-width: 1024px) {
+    .container {
+        padding: 20px;
+        font-size: 16px;
+    }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+    .container {
+        padding: 40px;
+        font-size: 18px;
+    }
+}

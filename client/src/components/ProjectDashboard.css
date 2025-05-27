@@ -1,17 +1,411 @@
-/* src/components/ProjectDashboard.css */
+@import './responsive.css';
+
+.color-0 { color: #007bff;  }
+.color-1 { color: #28a745;  }
+.color-2 { color: #ffc107;  }
+.color-3 { color: #dc3545;  }
+
 
 .project-dashboard-container {
+    padding: 10px; 
+    min-height: 89vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff; 
+}
+
+.project-dashboard-main-content {
+    display: flex;
+    gap: 20px; 
     width: 100%;
+    max-width: 1400px;
+    align-items: flex-start; 
+    margin-top: 20px;
+    justify-content: space-between; 
+    flex-wrap: wrap; 
 }
 
-/* Styles pour les panneaux, listes et cards sont maintenant en grande partie dans App.css */
-/* Ajoutez ici des styles spécifiques si nécessaire pour les projets */
-
-.project-list li {
-    font-size: 1.1em;
-    font-weight: 500;
+.project-dashboard-panel {
+    flex: 1;
+    padding: 20px;
+    border-radius: 15px; 
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(0, 0, 0, 30%); 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px; 
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease-in-out; 
 }
 
-.project-list li.active {
-    border-left: 5px solid var(--active-item-color);
+.project-dashboard-left-panel {
+    margin-left: 10px;
+    height: 88.9vh;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    border-top-right-radius: 0px;
+    background: rgb(0 0 0 / 15%); 
+}
+
+.project-dashboard-middle-panel {
+    height: 88.9vh;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 75px;
+    border-top-right-radius: 75px;
+    background: rgb(0 0 0 / 15%);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 123, 255, 0.5) rgba(255, 255, 255, 0.1);
+    position: relative; 
+    padding-bottom: 20px;
+}
+
+.project-dashboard-middle-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.project-dashboard-middle-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.project-dashboard-middle-panel::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 123, 255, 0.5);
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.project-dashboard-right-panel {
+    display: none;
+
+}
+
+
+.project-dashboard-card {
+    background-color: rgba(255, 255, 255, 0.15); 
+    padding: 15px; 
+    border-radius: 10px; 
+    margin-bottom: 20px; 
+    border: 1px solid rgb(0, 0, 0, 30%); 
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+    transition: transform 0.2s ease;
+}
+
+.project-dashboard-card:hover {
+    transform: translateY(-3px);
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+h3, h4 {
+    color: #fff; 
+    margin-top: 0;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.project-dashboard-form-group {
+    margin-bottom: 15px;
+}
+
+.project-dashboard-form-group label {
+    display: block;
+    margin-bottom: 5px; 
+    font-weight: bold;
+    color: #e0e0e0; 
+}
+
+.project-dashboard-form-group input[type="text"],
+.project-dashboard-form-group input[type="email"],
+.project-dashboard-form-group input[type="file"] {
+    width: 100%; 
+    padding: 10px; 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 5px; 
+    background-color: rgba(255, 255, 255, 0.05); 
+    color: #ffffff;
+    box-sizing: border-box;
+    transition: all 0.3s ease; 
+}
+
+.project-dashboard-form-group input::placeholder {
+    color: #b0b0b0; 
+}
+
+.project-dashboard-form-group input[type="text"]:focus,
+.project-dashboard-form-group input[type="email"]:focus,
+.project-dashboard-form-group input[type="file"]:focus {
+    border-color: #007bff; 
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+    outline: none;
+}
+
+.project-dashboard-button {
+    padding: 10px 20px; 
+    border: none;
+    border-radius: 5px; 
+    background-color: #007bff; 
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); 
+}
+
+.project-dashboard-button:hover:not(:disabled) {
+    background-color: #0056b3; 
+    transform: translateY(-1px); 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.project-dashboard-button:disabled {
+    background-color: #cccccc; 
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.project-dashboard-project-list-wrapper,
+.project-dashboard-user-list-wrapper {
+    max-height: 300px; 
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.15); 
+    border-radius: 10px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.project-dashboard-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.project-dashboard-list-item {
+    background-color: rgba(255, 255, 255, 0.08); 
+    margin-bottom: 8px; 
+    padding: 10px 15px;
+    border-radius: 8px; 
+    border: 1px solid rgba(255, 255, 255, 0.15); 
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    color: #ffffff; 
+    display: flex;
+    justify-content: flex-start; 
+    align-items: center;
+}
+
+.project-dashboard-list-item:last-child {
+    margin-bottom: 0;
+}
+
+.project-dashboard-list-item:hover {
+    background-color: rgba(255, 255, 255, 0.15); 
+    transform: translateY(-2px); 
+}
+
+.project-dashboard-list-item.active {
+    background-color: rgba(255, 255, 255, 0.39); 
+    border-color: rgba(255, 255, 255, 0.39); 
+}
+
+.user-avatar {
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.3); 
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px; 
+    font-weight: bold;
+    margin-right: 10px; 
+    flex-shrink: 0;
+}
+
+.user-list-name {
+    flex-grow: 1;
+}
+
+.project-dashboard-notification {
+    padding: 10px 20px; 
+    margin-bottom: 20px; 
+    border-radius: 8px; 
+    font-weight: bold;
+    text-align: center;
+    opacity: 0.95; 
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.project-dashboard-success {
+    background-color: #28a745; 
+    color: white;
+}
+
+.project-dashboard-error {
+    background-color: #dc3545; 
+    color: white;
+}
+
+.project-dashboard-loading-message,
+.project-dashboard-error-message,
+.project-dashboard-no-items-message,
+.project-dashboard-auth-hint,
+.project-dashboard-no-selection-message,
+.project-dashboard-hint-text {
+    color: #d0d0d0;
+    font-style: italic;
+    text-align: center;
+    padding: 10px;
+    font-size: 0.95rem; 
+}
+
+.project-dashboard-error-message {
+    color: #dc3545; 
+    font-weight: bold;
+}
+
+
+
+.project-dashboard-users-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.project-dashboard-user-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.project-dashboard-action-icon {
+    font-size: 1.8rem;
+    color: #007bff; 
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.project-dashboard-action-icon:hover {
+    color: #0056b3; 
+    transform: scale(1.1);
+}
+
+.project-dashboard-action-icon.active {
+    color: #28a745; 
+}
+
+.project-dashboard-sliding-panel {
+    max-height: 0; 
+    overflow: hidden;
+    transition: max-height 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-top 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-bottom 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background-color: transparent;
+    margin-bottom: 0; 
+    padding-bottom: 0; 
+    box-shadow: none; 
+}
+
+.project-dashboard-sliding-panel > .project-dashboard-card {
+    margin-top: 0; 
+    margin-bottom: 20px;
+    opacity: 0; 
+    transition: opacity 0.3s ease-in-out 0.4s; 
+}
+
+.project-dashboard-sliding-panel.slide-in-top {
+    max-height: 400px; 
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+.project-dashboard-sliding-panel.slide-in-top > .project-dashboard-card {
+    opacity: 1;
+}
+
+.project-dashboard-sliding-panel.slide-in-bottom {
+    max-height: 250px; 
+    order: 1; 
+    margin-top: 20px; 
+    padding-top: 10px;
+}
+
+.project-dashboard-sliding-panel.slide-in-bottom > .project-dashboard-card {
+    opacity: 1;
+}
+
+@media (max-width: 1200px) {
+    .project-dashboard-panel {
+        max-width: 48%; 
+    }
+}
+
+@media (max-width: 768px) {
+    .project-dashboard-main-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .project-dashboard-panel {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0; 
+        border-radius: 15px; 
+    }
+
+    .project-dashboard-left-panel,
+    .project-dashboard-middle-panel {
+        height: auto; 
+        min-height: unset;
+    }
+
+    
+    .project-dashboard-left-panel,
+    .project-dashboard-middle-panel,
+    .project-dashboard-right-panel {
+        border-radius: 15px; 
+    }
+
+    .project-dashboard-user-creation-form,
+    .project-dashboard-excel-upload-form {
+        border-radius: 10px; 
+    }
+
+    .project-dashboard-middle-panel {
+        padding-bottom: 0;
+    }
+}
+
+@media (max-width: 992px) {
+    .main-content.three-column-layout { 
+        grid-template-columns: 1fr;
+    }
+    .project-dashboard-left-panel, .project-dashboard-middle-panel {
+        max-width: 100%;
+        min-width: unset;
+        flex-basis: auto;
+    }
+}
+
+.project-dashboard-list-item.view-more {
+    justify-content: center;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7); 
+    background-color: rgba(255, 255, 255, 0.2); 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.project-dashboard-list-item.view-more:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+
 }
