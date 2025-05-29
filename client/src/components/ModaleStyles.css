@@ -124,14 +124,14 @@
 .modal-content .modal-list li .remove-item-btn {
     background: none;
     border: none;
-    color: #ff6e67; 
+    color: #f60700; 
     cursor: pointer;
     font-size: 1.2em;
     transition: color 0.2s ease-in-out;
 }
 
 .modal-content .modal-list li .remove-item-btn:hover {
-    color: #ff5555;
+    color: #f60700;
 }
 
 .modal-content .add-item-section {

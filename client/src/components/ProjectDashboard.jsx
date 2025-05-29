@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import IntroPanel from './IntroPanel';
 import './ProjectDashboard.css';
-import { FaUserPlus, FaInfoCircle, FaFileExcel, FaProjectDiagram, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-
+import { FaUserPlus, FaInfoCircle, FaFileExcel, FaProjectDiagram, FaChevronDown, FaChevronUp, FaTimes, FaCheck } from 'react-icons/fa';
+import { Plus } from "lucide-react";
 const ProjectDashboard = () => {
     const [projects, setProjects] = useState([]);
     const [newProjectName, setNewProjectName] = useState('');
+    const [newProjectDescription, setNewProjectDescription] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -18,10 +19,11 @@ const ProjectDashboard = () => {
     const [newUserEmail, setNewUserEmail] = useState('');
     const [excelFile, setExcelFile] = useState(null);
 
-    // New states for controlling visibility of dynamic sections
     const [showCreateUserForm, setShowCreateUserForm] = useState(false);
     const [showUploadExcelForm, setShowUploadExcelForm] = useState(false);
     const [showUserDetails, setShowUserDetails] = useState(false);
+
+    const [userProjectCounts, setUserProjectCounts] = useState([]);
 
     const navigate = useNavigate();
 
@@ -80,7 +82,7 @@ const ProjectDashboard = () => {
             if (response.ok) {
                 const data = await response.json();
                 const fetchedProjects = data.$values || data;
-                await fetchMeetingCountByProject(fetchedProjects); // Fetch meeting counts and merge
+                await fetchMeetingCountByProject(fetchedProjects);
             } else if (response.status === 401) {
                 showNotification("Session expirée ou non autorisé. Veuillez vous reconnecter.", 'error');
                 localStorage.removeItem('authToken');
@@ -163,7 +165,8 @@ const ProjectDashboard = () => {
                     const countData = meetingCounts.find(count => count.ProjectId === project.id);
                     return {
                         ...project,
-                        meetingCount: countData ? countData.MeetingCount : 0
+                        meetingCount: countData ? countData.MeetingCount : 0,
+                        creationDate: project.creationDate
                     };
                 });
                 setProjects(projectsWithCounts);
@@ -180,6 +183,42 @@ const ProjectDashboard = () => {
         }
     };
 
+    const fetchUserProjectCounts = useCallback(async () => {
+        setLoading(true);
+        const token = getAuthToken();
+
+        if (!token) {
+            showNotification('Non autorisé : connectez-vous pour accéder aux statistiques.', 'error');
+            setLoading(false);
+            navigate('/login');
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://localhost:7212/api/Project/user-project-counts`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setUserProjectCounts(data);
+            } else if (response.status === 401) {
+                showNotification("Session expirée ou non autorisé. Veuillez vous reconnecter.", 'error');
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                showNotification('Erreur lors de la récupération des statistiques des projets par utilisateur.', 'error');
+            }
+        } catch (err) {
+            showNotification('Erreur réseau ou du serveur lors de la récupération des statistiques.', 'error');
+            console.error('Fetch user project counts error:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [navigate, showNotification]);
+
     useEffect(() => {
         const token = getAuthToken();
         if (!token) {
@@ -187,8 +226,9 @@ const ProjectDashboard = () => {
         } else {
             fetchMyProjects();
             fetchAllUsers();
+            fetchUserProjectCounts();
         }
-    }, [navigate, fetchMyProjects, fetchAllUsers]);
+    }, [navigate, fetchMyProjects, fetchAllUsers, fetchUserProjectCounts]);
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
@@ -217,16 +257,17 @@ const ProjectDashboard = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ name: newProjectName })
+                body: JSON.stringify({ name: newProjectName, description: newProjectDescription })
             });
 
             if (response.ok) {
                 showNotification('Projet créé avec succès !', 'success');
                 setNewProjectName('');
+                setNewProjectDescription('');
                 await fetchMyProjects();
                 setShowContent(true);
+                fetchUserProjectCounts();
             } else if (response.status === 401) {
-                showNotification('Session expirée ou non autorisé. Veuillez vous reconnecter.', 'error');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
@@ -249,13 +290,11 @@ const ProjectDashboard = () => {
         const token = getAuthToken();
 
         if (!token) {
-            showNotification('Vous devez être connecté pour créer un utilisateur.', 'error');
             setLoading(false);
             return;
         }
 
         if (!newUserName.trim() || !newUserEmail.trim()) {
-            showNotification('Veuillez remplir tous les champs pour créer un utilisateur.', 'error');
             setLoading(false);
             return;
         }
@@ -284,11 +323,11 @@ const ProjectDashboard = () => {
                 setNewUserName('');
                 setNewUserEmail('');
                 fetchAllUsers();
+                fetchUserProjectCounts();
                 setShowCreateUserForm(false);
             } else if (response.status === 409) {
                 showNotification('Un utilisateur avec cet email existe déjà.', 'error');
             } else if (response.status === 401) {
-                showNotification('Non autorisé : vous n\'avez pas la permission de créer des utilisateurs.', 'error');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
@@ -296,8 +335,8 @@ const ProjectDashboard = () => {
                 showNotification(`Erreur lors de la création de l'utilisateur: ${errorText}`, 'error');
             }
         } catch (err) {
-            showNotification('Erreur réseau ou du serveur lors de la création de l\'utilisateur.', 'error');
             console.error('Create user error:', err);
+            showNotification('Erreur réseau ou du serveur lors de la création de l\'utilisateur.', 'error');
         } finally {
             setLoading(false);
         }
@@ -321,6 +360,7 @@ const ProjectDashboard = () => {
         }
 
         if (!excelFile) {
+            showNotification('Veuillez sélectionner un fichier Excel.', 'error');
             setLoading(false);
             return;
         }
@@ -339,10 +379,11 @@ const ProjectDashboard = () => {
 
             if (response.ok) {
                 const result = await response.json();
-                showNotification(result.message || 'Utilisateurs importés avec succès !', 'success');
+                showNotification(`Importation réussie. Créés: ${result.createdCount}, Mis à jour: ${result.updatedCount}, Erreurs: ${result.errorCount}`, 'success');
                 setExcelFile(null);
                 document.getElementById('excelFileInput').value = '';
                 fetchAllUsers();
+                fetchUserProjectCounts();
                 setShowUploadExcelForm(false);
             } else if (response.status === 400) {
                 const errorData = await response.json();
@@ -350,12 +391,12 @@ const ProjectDashboard = () => {
                 showNotification(errorMessage, 'error');
                 console.error('Excel upload error:', errorData);
             } else if (response.status === 401 || response.status === 403) {
-                showNotification('Non autorisé : vous n\'avez pas la permission ou votre session a expiré.', 'error');
+                showNotification("Session expirée ou non autorisé. Veuillez vous reconnecter.", 'error');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
                 const errorText = await response.text();
-                showNotification(`Erreur lors de l'importation: ${errorText}`, 'error');
+                showNotification(`Erreur lors de l'importation du fichier Excel: ${errorText}`, 'error');
                 console.error('Excel upload generic error:', errorText);
             }
         } catch (err) {
@@ -379,6 +420,21 @@ const ProjectDashboard = () => {
     const handleUserClick = (user) => {
         setSelectedUser(user);
         setShowUserDetails(true);
+        setShowCreateUserForm(false); // Close other forms when user details are shown
+        setShowUploadExcelForm(false);
+    };
+
+    const closeForms = () => {
+        setShowCreateUserForm(false);
+        setShowUploadExcelForm(false);
+        setShowUserDetails(false);
+        setSelectedUser(null);
+        setNewUserName(''); // Clear input fields
+        setNewUserEmail('');
+        setExcelFile(null);
+        if (document.getElementById('excelFileInput')) {
+            document.getElementById('excelFileInput').value = '';
+        }
     };
 
     const renderContent = () => {
@@ -396,11 +452,32 @@ const ProjectDashboard = () => {
             );
         }
 
+        const totalProjects = userProjectCounts.reduce((sum, user) => sum + user.ProjectCount, 0);
+        const totalUsers = userProjectCounts.length;
+
+        const chartLabels = userProjectCounts.map(user => user.FullName || user.Email);
+        const chartData = userProjectCounts.map(user => user.ProjectCount);
+
         return (
             <div className="project-dashboard-main-content">
                 <div className="project-dashboard-panel project-dashboard-left-panel glass-effect">
                     <div className="project-dashboard-card mb-20">
-                        <h4>Créer un nouveau projet</h4>
+                        <div className="project-header">
+                            <h3>Créer un nouveau projet</h3>
+                            <Plus
+                                size={20}
+                                className="add-item-button"
+                                title="Créer le projet"
+                                onClick={handleCreateProject}
+                                style={{
+                                    cursor: loading || !getAuthToken() || newProjectName.trim() === '' ? 'not-allowed' : 'pointer',
+                                    opacity: loading || !getAuthToken() || newProjectName.trim() === '' ? 0.5 : 1,
+                                }}
+                            />
+                        </div>
+
+
+
                         <form onSubmit={handleCreateProject}>
                             <div className="project-dashboard-form-group">
                                 <label htmlFor="projectName">Nom du projet</label>
@@ -414,30 +491,53 @@ const ProjectDashboard = () => {
                                     required
                                 />
                             </div>
-                            <button
-                                type="submit"
-                                disabled={loading || !getAuthToken() || newProjectName.trim() === ''}
-                                className="project-dashboard-button glass-button"
-                            >
-                                {loading ? 'Création...' : 'Créer le projet'}
-                            </button>
+                            <div className="project-dashboard-form-group">
+                                <label htmlFor="projectDescription">Description</label>
+                                <textarea
+                                    id="projectDescription"
+                                    name="projectDescription"
+                                    value={newProjectDescription}
+                                    onChange={(e) => setNewProjectDescription(e.target.value)}
+                                    placeholder="Décrivez votre projet en quelques mots..."
+                                    rows="3"
+                                ></textarea>
+                            </div>
+
                             {!getAuthToken() && <p className="project-dashboard-auth-hint">Connectez-vous pour créer un projet.</p>}
                         </form>
-                    </div>
 
-                    {/* Vos Projets Créés card */}
-                    <div className="project-dashboard-card project-dashboard-projects-card">
-                        <h4><FaProjectDiagram style={{ marginRight: '10px' }} /> Vos Projets Créés</h4>
                         {loading && <p className="project-dashboard-loading-message">Chargement de vos projets...</p>}
                         {error && <div className="project-dashboard-error-message">{error}</div>}
                         <div className="project-dashboard-project-list-wrapper">
+                            <h3>Mes Projets ({projects.length})</h3>
                             <ul className="project-dashboard-list project-list">
                                 {projects.length === 0 && !loading && !error ? (
                                     <p className="project-dashboard-no-items-message">Vous n'avez créé aucun projet.</p>
                                 ) : (
                                     projects.map(project => (
-                                        <li key={project.id} className="project-dashboard-list-item">
-                                            {project.name} <span className="meeting-count">(Réunions: {project.meetingCount})</span>
+                                        <li key={project.id} className="project-dashboard-list-item project-item">
+                                            <div className="project-item-layout">
+                                                <div className="project-item-left">
+                                                    <h4 className="project-name">{project.name}</h4>
+                                                    {project.description && (
+                                                        <p className="project-description">{project.description}</p>
+                                                    )}
+                                                </div>
+                                                <div className="project-item-center">
+                                                    {project.createdAt && (
+                                                        <p className="project-date">
+                                                            Créé le: {new Date(project.createdAt).toLocaleDateString('fr-FR', {
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric',
+                                                            })}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="project-item-right">
+                                                    <span className="meeting-count">{project.meetingCount || 0} réunions</span>
+                                                </div>
+                                            </div>
                                         </li>
                                     ))
                                 )}
@@ -446,143 +546,156 @@ const ProjectDashboard = () => {
                     </div>
                 </div>
 
-                <div className="project-dashboard-panel project-dashboard-middle-panel glass-effect">
-                    <div className="project-dashboard-users-header">
-                        <h3>Liste des Utilisateurs</h3>
-                        <div className="project-dashboard-user-actions">
-                            <FaUserPlus
-                                className="project-dashboard-action-icon"
-                                onClick={() => {
-                                    setShowCreateUserForm(!showCreateUserForm);
-                                    setShowUploadExcelForm(false);
-                                    setShowUserDetails(false);
-                                    setSelectedUser(null);
-                                }}
-                                title="Créer un nouvel utilisateur"
-                            />
-                            <FaFileExcel
-                                className="project-dashboard-action-icon"
-                                onClick={() => {
-                                    setShowUploadExcelForm(!showUploadExcelForm);
-                                    setShowCreateUserForm(false);
-                                    setShowUserDetails(false);
-                                    setSelectedUser(null);
-                                }}
-                                title="Importer des utilisateurs par Excel"
-                            />
-                            <FaInfoCircle
-                                className={`project-dashboard-action-icon ${showUserDetails ? 'active' : ''}`}
-                                onClick={() => setShowUserDetails(!showUserDetails)}
-                                title="Afficher les détails de l'utilisateur sélectionné"
-                            />
+                <div className="project-dashboard-right-section">
+                    <div className="project-dashboard-panel project-dashboard-middle-panel glass-effect">
+                        <div className="project-dashboard-users-header">
+                            <h3>Liste des Utilisateurs</h3>
+                            <div className="project-dashboard-user-actions">
+                                <FaUserPlus
+                                    className={`project-dashboard-action-icon ${showCreateUserForm ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setShowCreateUserForm(!showCreateUserForm);
+                                        setShowUploadExcelForm(false);
+                                        setShowUserDetails(false);
+                                        setSelectedUser(null);
+                                    }}
+                                    title="Créer un nouvel utilisateur"
+                                />
+                                <FaFileExcel
+                                    className={`project-dashboard-action-icon ${showUploadExcelForm ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setShowUploadExcelForm(!showUploadExcelForm);
+                                        setShowCreateUserForm(false);
+                                        setShowUserDetails(false);
+                                        setSelectedUser(null);
+                                    }}
+                                    title="Importer des utilisateurs par Excel"
+                                />
+                                <FaInfoCircle
+                                    className={`project-dashboard-action-icon ${showUserDetails ? 'active' : ''}`}
+                                    onClick={() => setShowUserDetails(!showUserDetails)}
+                                    title="Afficher les détails de l'utilisateur sélectionné"
+                                />
+                            </div>
+                        </div>
+
+                        {loading && <p className="project-dashboard-loading-message">Chargement des utilisateurs...</p>}
+                        {error && <div className="project-dashboard-error-message">{error}</div>}
+
+                        <div className={`project-dashboard-sliding-panel ${showCreateUserForm ? 'slide-in-top' : 'slide-out-top'}`}>
+                            {showCreateUserForm && (
+                                <div className="project-dashboard-card project-dashboard-user-creation-form">
+                                    <div className="form-header">
+                                        <h4>Créer un nouvel utilisateur</h4>
+                                        <FaTimes className="close-icon" onClick={closeForms} title="Fermer" />
+                                    </div>
+                                    <form onSubmit={handleCreateUser}>
+                                        <div className="project-dashboard-form-group">
+                                            <label htmlFor="newUserName">Nom Complet</label>
+                                            <input
+                                                type="text"
+                                                id="newUserName"
+                                                name="newUserName"
+                                                value={newUserName}
+                                                onChange={(e) => setNewUserName(e.target.value)}
+                                                placeholder="Nom et prénom"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="project-dashboard-form-group">
+                                            <label htmlFor="newUserEmail">Email</label>
+                                            <input
+                                                type="email"
+                                                id="newUserEmail"
+                                                name="newUserEmail"
+                                                value={newUserEmail}
+                                                onChange={(e) => setNewUserEmail(e.target.value)}
+                                                placeholder="email@example.com"
+                                                required
+                                            />
+                                        </div>
+                                        {(newUserName.trim() !== '' && newUserEmail.trim() !== '') && (
+                                            <button
+                                                type="submit"
+                                                disabled={loading || !getAuthToken()}
+                                                className="icon-button submit-button"
+                                                title="Créer l'utilisateur"
+                                            >
+                                                {loading ? '...' : <FaCheck size={20} />}
+                                            </button>
+                                        )}
+                                    </form>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className={`project-dashboard-sliding-panel ${showUploadExcelForm ? 'slide-in-top' : 'slide-out-top'}`}>
+                            {showUploadExcelForm && (
+                                <div className="project-dashboard-card project-dashboard-excel-upload-form">
+                                    <div className="form-header">
+                                        <FaTimes className="close-icon" onClick={closeForms} title="Fermer" />
+                                    </div>
+                                    <form onSubmit={handleUploadExcelUsers}>
+                                        <div className="project-dashboard-form-group">
+                                            <label htmlFor="excelFileInput">Sélectionner un fichier Excel (.xlsx)</label>
+                                            <input
+                                                type="file"
+                                                id="excelFileInput"
+                                                name="excelFile"
+                                                accept=".xlsx"
+                                                onChange={handleFileChange}
+                                                required
+                                            />
+                                        </div>
+                                        {excelFile && (
+                                            <button type="submit" disabled={loading || !getAuthToken()} className="icon-button submit-button" title="Importer les utilisateurs">
+                                                {loading ? '...' : <FaCheck size={20} />}
+                                            </button>
+                                        )}
+                                    </form>
+                                    <p className="project-dashboard-hint-text">
+                                        Le fichier Excel doit contenir les colonnes 'FullName' et 'Email'.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className={`project-dashboard-sliding-panel ${showUserDetails && selectedUser ? 'slide-in-bottom' : 'slide-out-bottom'}`}>
+                            {showUserDetails && selectedUser && (
+                                <div className="project-dashboard-card project-dashboard-user-detail-card">
+                                    <div className="form-header">
+                                        <h4>Détails de l'utilisateur</h4>
+                                        <FaTimes className="close-icon" onClick={closeForms} title="Fermer" />
+                                    </div>
+                                    {getUserAvatar(selectedUser)}
+                                    <p><strong>Nom :</strong> {selectedUser.fullName || 'N/A'}</p>
+                                    <p><strong>Email:</strong> {selectedUser.email}</p>
+                                    {selectedUser.phoneNumber && <p><strong>Téléphone:</strong> {selectedUser.phoneNumber}</p>}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="project-dashboard-user-list-wrapper">
+                            <ul className="project-dashboard-list">
+                                {users.length === 0 && !loading && !error ? (
+                                    <p className="project-dashboard-no-items-message">Aucun utilisateur trouvé.</p>
+                                ) : (
+                                    users.map(user => (
+                                        <li
+                                            key={user.id}
+                                            onClick={() => handleUserClick(user)}
+                                            className={selectedUser && selectedUser.id === user.id ? 'project-dashboard-list-item active' : 'project-dashboard-list-item'}
+                                        >
+                                            {getUserAvatar(user)}
+                                            <span className="user-list-name">{user.fullName}</span>
+                                            <span className="user-list-email">{user.email}</span>
+                                        </li>
+                                    ))
+                                )}
+                            </ul>
                         </div>
                     </div>
-
-                    {loading && <p className="project-dashboard-loading-message">Chargement des utilisateurs...</p>}
-                    {error && <div className="project-dashboard-error-message">{error}</div>}
-
-                    {/* Sliding form for Create User */}
-                    <div className={`project-dashboard-sliding-panel ${showCreateUserForm ? 'slide-in-top' : 'slide-out-top'}`}>
-                        {showCreateUserForm && (
-                            <div className="project-dashboard-card project-dashboard-user-creation-form">
-                                <h4>Créer un nouvel utilisateur</h4>
-                                <form onSubmit={handleCreateUser}>
-                                    <div className="project-dashboard-form-group">
-                                        <label htmlFor="newUserName">Nom Complet</label>
-                                        <input
-                                            type="text"
-                                            id="newUserName"
-                                            name="newUserName"
-                                            value={newUserName}
-                                            onChange={(e) => setNewUserName(e.target.value)}
-                                            placeholder="Nom et prénom"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="project-dashboard-form-group">
-                                        <label htmlFor="newUserEmail">Email</label>
-                                        <input
-                                            type="email"
-                                            id="newUserEmail"
-                                            value={newUserEmail}
-                                            onChange={(e) => setNewUserEmail(e.target.value)}
-                                            placeholder="email@example.com"
-                                            required
-                                        />
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        disabled={loading || !getAuthToken() || newUserName.trim() === '' || newUserEmail.trim() === ''}
-                                        className="project-dashboard-button glass-button"
-                                    >
-                                        {loading ? 'Création...' : 'Créer l\'utilisateur'}
-                                    </button>
-                                </form>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className={`project-dashboard-sliding-panel ${showUploadExcelForm ? 'slide-in-top' : 'slide-out-top'}`}>
-                        {showUploadExcelForm && (
-                            <div className="project-dashboard-card project-dashboard-excel-upload-form">
-                                <h4>Importer des utilisateurs par Excel</h4>
-                                <form onSubmit={handleUploadExcelUsers}>
-                                    <div className="project-dashboard-form-group">
-                                        <label htmlFor="excelFileInput">Sélectionner un fichier Excel (.xlsx)</label>
-                                        <input
-                                            type="file"
-                                            id="excelFileInput"
-                                            name="excelFile"
-                                            accept=".xlsx"
-                                            onChange={handleFileChange}
-                                            required
-                                        />
-                                    </div>
-                                    <button type="submit" disabled={loading || !getAuthToken() || !excelFile} className="project-dashboard-button glass-button">
-                                        {loading ? 'Importation...' : 'Importer les utilisateurs'}
-                                    </button>
-                                </form>
-                                <p className="project-dashboard-hint-text">
-                                    Le fichier Excel doit contenir les colonnes 'FullName' et 'Email'.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className={`project-dashboard-sliding-panel ${showUserDetails && selectedUser ? 'slide-in-bottom' : 'slide-out-bottom'}`}>
-                        {showUserDetails && selectedUser && (
-                            <div className="project-dashboard-card project-dashboard-user-detail-card">
-                                <h4>Détails de l'utilisateur</h4>
-                                {getUserAvatar(selectedUser)}
-                                <p><strong>Nom :</strong> {selectedUser.fullName || 'N/A'}</p>
-                                <p><strong>Email:</strong> {selectedUser.email}</p>
-                                {selectedUser.phoneNumber && <p><strong>Téléphone:</strong> {selectedUser.phoneNumber}</p>}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="project-dashboard-user-list-wrapper">
-                        <ul className="project-dashboard-list">
-                            {users.length === 0 && !loading && !error ? (
-                                <p className="project-dashboard-no-items-message">Aucun utilisateur trouvé.</p>
-                            ) : (
-                                users.map(user => (
-                                    <li
-                                        key={user.id}
-                                        onClick={() => handleUserClick(user)}
-                                        className={selectedUser && selectedUser.id === user.id ? 'project-dashboard-list-item active' : 'project-dashboard-list-item'}
-                                    >
-                                        {getUserAvatar(user)}
-                                        <span className="user-list-name">{user.fullName}</span>
-                                        <span className="user-list-name">{user.email}</span>
-                                    </li>
-                                ))
-                            )}
-                        </ul>
-                    </div>
                 </div>
-
-                <div className="project-dashboard-panel project-dashboard-right-panel" style={{ display: 'none' }}></div>
             </div>
         );
     };

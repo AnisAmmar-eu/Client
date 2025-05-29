@@ -420,7 +420,7 @@ const ArchiveDashboard = () => {
                                                     <span className="entry-text">{task.title}</span>
                                                 </div>
                                                 <div className="entry-meta-info">
-                                                    {task.assignedTo && <span className="entry-responsible"><i className="fas fa-user-tag"></i> Assigné à: {task.assignedTo.userName}</span>}
+                                                    {task.assignedTo && <span className="entry-responsable"><i className="fas fa-user-tag"></i> Assigné à: {task.assignedTo.userName}</span>}
                                                     <span className="entry-dates">
                                                         <i className="far fa-calendar-check"></i> Créé le: {formatSimpleDate(task.createdAt)}
                                                         {task.dueDate && <span className="entry-due-date"> | Échéance: {formatSimpleDate(task.dueDate)}</span>}

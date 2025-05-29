@@ -83,7 +83,6 @@ const CheckboxDropdown = ({ label, options, selectedValues, onChange }) => {
     );
 };
 
-
 const MeetingsDashboard = () => {
     const [meetings, setMeetings] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -106,9 +105,10 @@ const MeetingsDashboard = () => {
     const [showDescriptionModal, setShowDescriptionModal] = useState(false);
     const [showAgendaModal, setShowAgendaModal] = useState(false);
     const [showObjectivesModal, setShowObjectivesModal] = useState(false);
-
     const [newlyCreatedMeetingId, setNewlyCreatedMeetingId] = useState(null);
     const [sendingInvitations, setSendingInvitations] = useState(false);
+    const [selectedMeeting, setSelectedMeeting] = useState(null); // Nouvel état pour la réunion sélectionnée
+    const [meetingParticipants, setMeetingParticipants] = useState([]); // État pour les participants de la réunion
 
     const navigate = useNavigate();
     const getAuthToken = () => localStorage.getItem('authToken');
@@ -135,6 +135,32 @@ const MeetingsDashboard = () => {
             setMeetings([]);
         }
     }, [selectedProjectId, projects]);
+
+    const fetchMeetingParticipants = async (meetingId) => {
+        setLoading(true);
+        setError('');
+        const token = getAuthToken();
+        try {
+            const response = await fetch(`https://localhost:7212/api/Meeting/${meetingId}/participants`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setMeetingParticipants(data.$values || data);
+            } else if (response.status === 401) {
+                setError("Session expirée ou non autorisé. Veuillez vous reconnecter.");
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                setError('Erreur lors de la récupération des participants.');
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur.');
+            console.error('Fetch meeting participants error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchProjects = async () => {
         setLoading(true);
@@ -169,7 +195,13 @@ const MeetingsDashboard = () => {
             setLoading(false);
         }
     };
-
+    const getTodayDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); 
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
     const fetchUsers = async () => {
         setLoading(true);
         setError('');
@@ -273,14 +305,6 @@ const MeetingsDashboard = () => {
         setShowDescriptionModal(true);
     };
 
-    const handleSaveAgenda = (agenda) => {
-        setNewMeetingData(prev => ({ ...prev, agenda }));
-        setShowAgendaModal(false);
-    };
-
-    const handleOpenAgendaModal = () => {
-        setShowAgendaModal(true);
-    };
 
     const handleSaveObjectives = (objectives) => {
         setNewMeetingData(prev => ({ ...prev, objectives }));
@@ -450,6 +474,9 @@ const MeetingsDashboard = () => {
 
             if (response.ok) {
                 setMeetings(prevMeetings => prevMeetings.filter(m => m.id !== meetingId));
+                if (selectedMeeting?.id === meetingId) {
+                    setSelectedMeeting(null); 
+                }
             } else if (response.status === 401) {
                 setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
@@ -457,8 +484,7 @@ const MeetingsDashboard = () => {
             } else if (response.status === 400) {
                 const errorBody = await response.json();
                 setError(`Erreur: ${errorBody.error || 'La réunion est déjà archivée ou une erreur s\'est produite.'}`);
-            }
-            else {
+            } else {
                 const errorText = await response.text();
                 setError(`Erreur lors de l'archivage de la réunion: ${errorText}`);
             }
@@ -470,12 +496,52 @@ const MeetingsDashboard = () => {
         }
     };
 
+    const handleSelectMeeting = (meeting) => {
+        setSelectedMeeting(meeting);
+        fetchMeetingParticipants(meeting.id); 
+    };
 
+    const handleBackToForm = () => {
+        setSelectedMeeting(null);
+        setMeetingParticipants([]);
+    };
+
+    const parseAgendaStringToArray = (agendaString) => {
+        if (!agendaString) {
+            return [{ title: '', start: '', duration: '', finish: '' }]; 
+        }
+     
+        return agendaString.split('\n')
+            .filter(line => line.trim() !== '')
+            .map(line => ({
+                title: line.trim(),
+                start: '',    
+                duration: '', 
+                finish: ''    
+            }));
+    };
+
+    const convertAgendaArrayToString = (agendaArray) => {
+        if (!agendaArray || agendaArray.length === 0) {
+            return '';
+        }
+        return agendaArray.map(item => item.title).join('\n');
+    };
+
+    const handleSaveAgenda = (agendaArrayFromModal) => {
+        const agendaString = convertAgendaArrayToString(agendaArrayFromModal);
+        setNewMeetingData(prev => ({ ...prev, agenda: agendaString }));
+        setShowAgendaModal(false);
+    };
+
+    const handleOpenAgendaModal = () => {
+        setShowAgendaModal(true);
+    };
     return (
         <div className="md-container">
-            <div className="md-main-content">
-                <div className="md-left-panel"> 
-                    <div className="md-glassy-card md-project-meetings-card"> 
+            <div className="md-content-container">
+                <div className="md-left-panel">
+                    <div className="md-glassy-card md-project-meetings-card">
                         <h3>Filtrer par Projet</h3>
                         <div className="md-form-group md-project-select-group">
                             <label htmlFor="selectProjectMeetings">Sélectionner un projet</label>
@@ -507,7 +573,12 @@ const MeetingsDashboard = () => {
                                 </p>
                             )}
                             {meetings.map(meeting => (
-                                <div key={meeting.id} className="md-meeting-card md-glassy-card">
+                                <div
+                                    key={meeting.id}
+                                    className={`md-meeting-card md-glassy-card ${selectedMeeting?.id === meeting.id ? 'md-selected' : ''}`}
+                                    onClick={() => handleSelectMeeting(meeting)}
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <div className="md-card-header">
                                         <h4 className="md-meeting-title">{meeting.title}</h4>
                                         <div className="md-meeting-datetime">
@@ -516,7 +587,10 @@ const MeetingsDashboard = () => {
                                         </div>
                                         <Archive
                                             className={`md-icon-button ${loading ? 'disabled' : ''}`}
-                                            onClick={() => !loading && handleArchiveMeeting(meeting.id, meeting.title)}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); 
+                                                !loading && handleArchiveMeeting(meeting.id, meeting.title);
+                                            }}
                                             title="Archiver"
                                         />
                                     </div>
@@ -558,156 +632,231 @@ const MeetingsDashboard = () => {
                     {error && <div className="md-error-message">{error}</div>}
 
                     <div className="md-glassy-card">
-                        <h4>Planifier une nouvelle réunion</h4>
-                        <form onSubmit={handleCreateMeeting}>
-                            <div className="md-form-group">
-                                <label htmlFor="meetingProject">Projet Associé</label>
-                                <select
-                                    id="meetingProject"
-                                    name="projectId"
-                                    value={newMeetingData.projectId}
-                                    onChange={handleNewMeetingChange}
-                                    required
-                                    disabled={projects.length === 0}
-                                >
-                                    <option value="">-- Choisir un projet --</option>
-                                    {projects.map(project => (
-                                        <option key={project.id} value={project.id}>{project.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="md-form-group">
-                                <label htmlFor="meetingTitle">Titre de la Réunion</label>
-                                <input
-                                    type="text"
-                                    id="meetingTitle"
-                                    name="title"
-                                    value={newMeetingData.title}
-                                    onChange={handleNewMeetingChange}
-                                    placeholder="Ex: Réunion de planification Sprint 3"
-                                    required
-                                />
-                            </div>
-                            <div className="md-form-row" style={{ display: 'flex', gap: '1rem' }}>
-                                {/* Description */}
-                                <div className="md-form-group">
-                                    <label
-                                        className="md-description-card"
-                                        onClick={handleOpenDescriptionModal}
-                                        tabIndex="0"
-                                        role="button"
-                                        aria-label="Modifier la description"
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" || e.key === " ") {
-                                                handleOpenDescriptionModal();
-                                            }
-                                        }}
+                        {selectedMeeting ? (
+                            <>
+                                <h4>Détails de la réunion</h4>
+                                <div className="md-meeting-details">
+                                    <div className="md-detail-item">
+                                        <strong>Titre :</strong> {selectedMeeting.title}
+                                    </div>
+                                    <div className="md-detail-item">
+                                        <strong>Projet :</strong> {projects.find(p => p.id === selectedMeeting.projectId)?.name || 'N/A'}
+                                    </div>
+                                    <div className="md-detail-item">
+                                        <strong>Date :</strong> {new Date(selectedMeeting.date).toLocaleDateString()}
+                                    </div>
+                                    <div className="md-detail-item">
+                                        <strong>Heure :</strong> {new Date(selectedMeeting.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                    <div className="md-detail-item">
+                                        <strong>Description :</strong>
+                                        {selectedMeeting.description || 'Aucune description fournie.'}
+                                    </div>
+                                    <div className="md-detail-item">
+                                        <strong>Agenda :</strong>
+                                        {selectedMeeting.agenda ? (
+                                            <table className="md-transparent-table">
+                                                <tbody>
+                                                    {selectedMeeting.agenda.split('\n').filter(item => item.trim() !== '').map((item, index) => (
+                                                        <tr key={index}>
+                                                            <td>{item}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        ) : (
+                                            <p>Aucun agenda fourni.</p>
+                                        )}
+                                    </div>
+                                    <div className="md-detail-item">
+                                        <strong>Objectifs & Non-Objectifs :</strong>
+                                        {selectedMeeting.objectives ? (
+                                            <table className="md-transparent-table">
+                                                <tbody>
+                                                    {selectedMeeting.objectives.split('\n').filter(item => item.trim() !== '').map((item, index) => (
+                                                        <tr key={index}>
+                                                            <td>{item}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        ) : (
+                                            <p>Aucun objectif fourni.</p>
+                                        )}
+                                    </div>
+                                    <div className="md-detail-item">
+                                        <strong>Participants :</strong>
+                                        {loading ? (
+                                            <p>Chargement des participants...</p>
+                                        ) : meetingParticipants.length > 0 ? (
+                                            <ul>
+                                                {meetingParticipants.map(participant => (
+                                                    <li key={participant.id}>
+                                                        {participant.fullName} ({participant.email})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p>Aucun participant associé.</p>
+                                        )}
+                                    </div>
+                                    <button
+                                        className="md-glass-button"
+                                        onClick={handleBackToForm}
                                     >
-                                        Description
-                                    </label>
+                                        Retour au formulaire
+                                    </button>
                                 </div>
+                            </>
+                        ) : (
+                            <>
+                                <h4>Planifier une nouvelle réunion</h4>
+                                <form onSubmit={handleCreateMeeting}>
+                                    <div className="md-form-group">
+                                        <label htmlFor="meetingProject">Projet Associé</label>
+                                        <select
+                                            id="meetingProject"
+                                            name="projectId"
+                                            value={newMeetingData.projectId}
+                                            onChange={handleNewMeetingChange}
+                                            required
+                                            disabled={projects.length === 0}
+                                        >
+                                            <option value="">-- Choisir un projet --</option>
+                                            {projects.map(project => (
+                                                <option key={project.id} value={project.id}>{project.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="md-form-group">
+                                        <label htmlFor="meetingTitle">Titre de la Réunion</label>
+                                        <input
+                                            type="text"
+                                            id="meetingTitle"
+                                            name="title"
+                                            value={newMeetingData.title}
+                                            onChange={handleNewMeetingChange}
+                                            placeholder="Ex: Réunion de planification Sprint 3"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="md-form-row" style={{ display: 'flex', gap: '1rem' }}>
+                                        <div className="md-form-group">
+                                            <label
+                                                className="md-description-card"
+                                                onClick={handleOpenDescriptionModal}
+                                                tabIndex="0"
+                                                role="button"
+                                                aria-label="Modifier la description"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") {
+                                                        handleOpenDescriptionModal();
+                                                    }
+                                                }}
+                                            >
+                                                Description
+                                            </label>
+                                        </div>
+                                        <div className="md-form-group">
+                                            <label
+                                                className="md-agenda-card"
+                                                onClick={handleOpenAgendaModal}
+                                                tabIndex="0"
+                                                role="button"
+                                                aria-label="Modifier l'agenda"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") {
+                                                        handleOpenAgendaModal();
+                                                    }
+                                                }}
+                                            >
+                                                Agenda
+                                            </label>
+                                        </div>
+                                        <div className="md-form-group">
+                                            <label
+                                                className="md-obj-card"
+                                                onClick={handleOpenObjectivesModal}
+                                                tabIndex="0"
+                                                role="button"
+                                                aria-label="Modifier les objectifs et non-objectifs"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") {
+                                                        handleOpenObjectivesModal();
+                                                    }
+                                                }}
+                                            >
+                                                Objectifs & Non-Objectifs
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="md-form-group">
+                                        <label htmlFor="meetingDate">Date de la réunion</label>
+                                        <input
+                                            type="date"
+                                            id="meetingDate"
+                                            name="date"
+                                            value={newMeetingData.date}
+                                            onChange={handleNewMeetingChange}
+                                            min={getTodayDate()} 
+                                            required
+                                        />
+                                    </div>
+                                    <div className="md-form-group md-half-width">
+                                        <label htmlFor="meetingTime">Heure</label>
+                                        <input
+                                            type="time"
+                                            id="meetingTime"
+                                            name="time"
+                                            value={newMeetingData.time}
+                                            onChange={handleNewMeetingChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="md-form-group md-half-width">
+                                        <label htmlFor="meetingDuration">Durée</label>
+                                        <input
+                                            type="time"
+                                            id="meetingDuration"
+                                            name="duration"
+                                            value={newMeetingData.duration || ''}
+                                            onChange={handleNewMeetingChange}
+                                        />
+                                    </div>
+                                    <div className="md-form-group">
+                                        <label>Inviter des participants</label>
+                                        <CheckboxDropdown
+                                            label="Participants"
+                                            options={users}
+                                            selectedValues={selectedParticipantIds}
+                                            onChange={handleParticipantChange}
 
-                                {/* Agenda */}
-                                <div className="md-form-group">
-                                    <label
-                                        className="md-agenda-card"
-                                        onClick={handleOpenAgendaModal}
-                                        tabIndex="0"
-                                        role="button"
-                                        aria-label="Modifier l'agenda"
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" || e.key === " ") {
-                                                handleOpenAgendaModal();
-                                            }
-                                        }}
+                                        />
+                                        {users.length === 0 && !loading && <p className="md-hint-message">Aucun utilisateur à inviter.</p>}
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !getAuthToken() || projects.length === 0 || !newMeetingData.projectId}
+                                        className="md-glass-button md-create-meeting-button"
                                     >
-                                        Agenda
-                                    </label>
-                                </div>
-
-                                <div className="md-form-group">
-                                    <label
-                                        className="md-obj-card"
-                                        onClick={handleOpenObjectivesModal}
-                                        tabIndex="0"
-                                        role="button"
-                                        aria-label="Modifier les objectifs et non-objectifs"
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" || e.key === " ") {
-                                                handleOpenObjectivesModal();
-                                            }
-                                        }}
-                                    >
-                                        Objectifs & Non-Objectifs
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="md-form-group md-half-width">
-                                <label htmlFor="meetingDate">Date</label>
-                                <input
-                                    type="date"
-                                    id="meetingDate"
-                                    name="date"
-                                    value={newMeetingData.date}
-                                    onChange={handleNewMeetingChange}
-                                    required
-                                />
-                            </div>
-                            <div className="md-form-group md-half-width">
-                                <label htmlFor="meetingTime">Heure</label>
-                                <input
-                                    type="time"
-                                    id="meetingTime"
-                                    name="time"
-                                    value={newMeetingData.time}
-                                    onChange={handleNewMeetingChange}
-                                    required
-                                />
-                            </div>
-                            <div className="md-form-group md-half-width">
-                                <label htmlFor="meetingDuration">Durée</label>
-                                <input
-                                    type="time"
-                                    id="meetingDuration"
-                                    name="duration"
-                                    value={newMeetingData.duration || ''}
-                                    onChange={handleNewMeetingChange}
-
-                                />
-                            </div>
-                            <div className="md-form-group">
-                                <label>Inviter des participants</label>
-                                <CheckboxDropdown
-                                    label="Participants"
-                                    options={users}
-                                    selectedValues={selectedParticipantIds}
-                                    onChange={handleParticipantChange}
-                                />
-                                {users.length === 0 && !loading && <p className="md-hint-message">Aucun utilisateur à inviter.</p>}
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={loading || !getAuthToken() || projects.length === 0 || !newMeetingData.projectId}
-                                className="md-glass-button md-create-meeting-button"
-                            >
-                                {loading ? 'Planification...' : 'Planifier la réunion'}
-                            </button>
-                            {!getAuthToken() && <p className="md-auth-hint">Connectez-vous pour planifier une réunion.</p>}
-                            {projects.length === 0 && <p className="md-auth-hint">Créez un projet avant de planifier une réunion.</p>}
-                        </form>
-
-                        {newlyCreatedMeetingId && selectedParticipantIds.length > 0 && (
-                            <div className="md-send-invitations-section">
-                                <p>Réunion créée. Envoyez les invitations aux {selectedParticipantIds.length} participants sélectionnés :</p>
-                                <button
-                                    className="md-glass-button md-send-invites-button"
-                                    onClick={() => sendMeetingInvitations(newlyCreatedMeetingId, selectedParticipantIds)}
-                                    disabled={sendingInvitations || loading}
-                                >
-                                    {sendingInvitations ? 'Envoi en cours...' : 'Envoyer les invitations par Mail'}
-                                </button>
-                            </div>
+                                        {loading ? 'Planification...' : 'Planifier la réunion'}
+                                    </button>
+                                    {!getAuthToken() && <p className="md-auth-hint">Connectez-vous pour planifier une réunion.</p>}
+                                    {projects.length === 0 && <p className="md-auth-hint">Créez un projet avant de planifier une réunion.</p>}
+                                </form>
+                                {newlyCreatedMeetingId && selectedParticipantIds.length > 0 && (
+                                    <div className="md-send-invitations-section">
+                                        <p>Réunion créée. Envoyez les invitations aux {selectedParticipantIds.length} participants sélectionnés :</p>
+                                        <button
+                                            className="md-glass-button md-send-invites-button"
+                                            onClick={() => sendMeetingInvitations(newlyCreatedMeetingId, selectedParticipantIds)}
+                                            disabled={sendingInvitations || loading}
+                                        >
+                                            {sendingInvitations ? 'Envoi en cours...' : 'Envoyer les invitations par Mail'}
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -719,14 +868,13 @@ const MeetingsDashboard = () => {
                     onCancel={() => setShowDescriptionModal(false)}
                 />
             )}
-
-            {showAgendaModal && (
-                <AgendaModal
-                    agenda={newMeetingData.agenda}
-                    onSave={handleSaveAgenda}
-                    onCancel={() => setShowAgendaModal(false)}
-                />
-            )}
+        {showAgendaModal && (
+            <AgendaModal
+                agenda={parseAgendaStringToArray(newMeetingData.agenda)} 
+                onSave={handleSaveAgenda}
+                onCancel={() => setShowAgendaModal(false)}
+            />
+        )}
             {showObjectivesModal && (
                 <ObjectivesModal
                     objectives={newMeetingData.objectives}
@@ -734,7 +882,6 @@ const MeetingsDashboard = () => {
                     onCancel={() => setShowObjectivesModal(false)}
                 />
             )}
-
         </div>
     );
 };

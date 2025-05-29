@@ -137,7 +137,35 @@ const TaskDashboard = () => {
         };
         fetchMeetings();
     }, [selectedProjectId, navigate]);
+    // Calculate task counts for each filter
+    const calculateTaskCounts = () => {
+        const now = new Date();
+        const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfWeek = new Date(now);
+        endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
+        const endOfWeekUtc = Date.UTC(endOfWeek.getFullYear(), endOfWeek.getMonth(), endOfWeek.getDate(), 23, 59, 59, 999);
+        const currentUserId = getUserId();
 
+        return {
+            all: tasks.length,
+            today: tasks.filter(task => {
+                if (!task.dueDate) return false;
+                const taskDueDate = new Date(task.dueDate);
+                const taskDueUtc = Date.UTC(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate());
+                return taskDueUtc === todayUtc;
+            }).length,
+            thisWeek: tasks.filter(task => {
+                if (!task.dueDate) return false;
+                const taskDueDate = new Date(task.dueDate);
+                const taskDueUtc = Date.UTC(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate());
+                return taskDueUtc >= todayUtc && taskDueUtc <= endOfWeekUtc;
+            }).length,
+            urgent: tasks.filter(task => task.priority === 'Urgent').length,
+            assignedToMe: tasks.filter(task => task.assignedToUserId === currentUserId).length,
+        };
+    };
+
+    const taskCounts = calculateTaskCounts();
     const fetchTasks = async () => {
         if (!selectedMeetingId) {
             setTasks([]);
@@ -417,57 +445,77 @@ const TaskDashboard = () => {
 
     return (
         <div className="task-dashboard-container">
-            <div className="navbar glass-effect">
-<div className="filter-badges">
-    <span className={`badge ${currentFilter === 'all' ? 'active' : ''}`} onClick={() => setCurrentFilter('all')}>
-        <i className="fas fa-inbox"></i> Toutes
-    </span>
-    <span className={`badge ${currentFilter === 'today' ? 'active' : ''}`} onClick={() => setCurrentFilter('today')}>
-        <i className="fas fa-calendar-day"></i> Aujourd'hui
-    </span>
-    <span className={`badge ${currentFilter === 'thisWeek' ? 'active' : ''}`} onClick={() => setCurrentFilter('thisWeek')}>
-        <i className="fas fa-calendar-week"></i> Semaine
-    </span>
-    <span className={`badge ${currentFilter === 'urgent' ? 'active' : ''}`} onClick={() => setCurrentFilter('urgent')}>
-        <i className="fas fa-exclamation-circle"></i> Urgent
-    </span>
-    <span className={`badge ${currentFilter === 'assignedToMe' ? 'active' : ''}`} onClick={() => setCurrentFilter('assignedToMe')}>
-        <i className="fas fa-user-circle"></i> À moi
-    </span>
-</div>
+            <div className="task-section glass-effect">
+                {/* Fusion des badges et sélecteurs en haut de task-section */}
+                <div className="filter-and-select-group">
+                    <div className="filter-badges">
+                        <span
+                            className={`badge ${currentFilter === 'all' ? 'active' : ''}`}
+                            onClick={() => setCurrentFilter('all')}
+                        >
+                            <i className="fas fa-inbox"></i> Toutes
+                            {taskCounts.all > 0 && <span className="task-count">{taskCounts.all}</span>}
+                        </span>
+                        <span
+                            className={`badge ${currentFilter === 'today' ? 'active' : ''}`}
+                            onClick={() => setCurrentFilter('today')}
+                        >
+                            <i className="fas fa-calendar-day"></i> Aujourd'hui
+                            {taskCounts.today > 0 && <span className="task-count">{taskCounts.today}</span>}
+                        </span>
+                        <span
+                            className={`badge ${currentFilter === 'thisWeek' ? 'active' : ''}`}
+                            onClick={() => setCurrentFilter('thisWeek')}
+                        >
+                            <i className="fas fa-calendar-week"></i> Semaine
+                            {taskCounts.thisWeek > 0 && <span className="task-count">{taskCounts.thisWeek}</span>}
+                        </span>
+                        <span
+                            className={`badge ${currentFilter === 'urgent' ? 'active' : ''}`}
+                            onClick={() => setCurrentFilter('urgent')}
+                        >
+                            <i className="fas fa-exclamation-circle"></i> Urgent
+                            {taskCounts.urgent > 0 && <span className="task-count">{taskCounts.urgent}</span>}
+                        </span>
+                        <span
+                            className={`badge ${currentFilter === 'assignedToMe' ? 'active' : ''}`}
+                            onClick={() => setCurrentFilter('assignedToMe')}
+                        >
+                            <i className="fas fa-user-circle"></i> À moi
+                            {taskCounts.assignedToMe > 0 && <span className="task-count">{taskCounts.assignedToMe}</span>}
+                        </span>
+                    </div>
 
-                <div className="select-group">
-                    <select
-                        id="selectProject"
-                        value={selectedProjectId}
-                        onChange={(e) => setSelectedProjectId(e.target.value)}
-                        required
-                    >
-                        <option value="">-- Choisir un projet --</option>
-                        {projects.map(project => (
-                            <option key={project.id} value={project.id}>{project.name}</option>
-                        ))}
-                    </select>
-                    <select
-                        id="selectMeeting"
-                        value={selectedMeetingId}
-                        onChange={(e) => setSelectedMeetingId(e.target.value)}
-                        required
-                        disabled={!selectedProjectId || meetings.length === 0}
-                    >
-                        <option value="">-- Choisir une réunion --</option>
-                        {meetings.map(meeting => (
-                            <option key={meeting.id} value={meeting.id}>
-                                {meeting.title} ({new Date(meeting.date).toLocaleDateString()})
-                            </option>
-                        ))}
-                    </select>
+                    <div className="select-group">
+                        <select
+                            id="selectProject"
+                            value={selectedProjectId}
+                            onChange={(e) => setSelectedProjectId(e.target.value)}
+                            required
+                        >
+                            <option value="">-- Choisir un projet --</option>
+                            {projects.map(project => (
+                                <option key={project.id} value={project.id}>{project.name}</option>
+                            ))}
+                        </select>
+                        <select
+                            id="selectMeeting"
+                            value={selectedMeetingId}
+                            onChange={(e) => setSelectedMeetingId(e.target.value)}
+                            required
+                            disabled={!selectedProjectId || meetings.length === 0}
+                        >
+                            <option value="">-- Choisir une réunion --</option>
+                            {meetings.map(meeting => (
+                                <option key={meeting.id} value={meeting.id}>
+                                    {meeting.title}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            {/* Section des tâches */}
-            <div className="main-content">
-                <div className="task-section glass-effect">
+                <div className="task-content">
                     <div className="panel-header-with-button">
                         <h3>
                             Tâches {
@@ -476,7 +524,7 @@ const TaskDashboard = () => {
                                         currentFilter === 'thisWeek' ? 'de cette semaine' :
                                             currentFilter === 'urgent' ? 'urgentes' :
                                                 currentFilter === 'assignedToMe' ? 'qui me sont assignées' : ''
-                            } ({meetings.find(m => m.id === selectedMeetingId)?.title || 'N/A'})
+                            }
                         </h3>
 
                         <Plus

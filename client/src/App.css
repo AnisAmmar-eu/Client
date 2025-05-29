@@ -1,14 +1,14 @@
 
 :root {
     /* Couleurs de fond pour l'animation */
-    --bg-gradient-start-1: #4F46E5 ; 
-    --bg-gradient-end-1: #4F46E5 ;   
-    --bg-gradient-start-2: #4F46E5 ; 
-    --bg-gradient-end-2: #4F46E5 ;   
-    --bg-gradient-start-3: #4F46E5 ; 
-    --bg-gradient-end-3: #4F46E5 ;   
-    --bg-gradient-start-4: #4F46E5 ; 
-    --bg-gradient-end-4: #4F46E5 ;   
+    --bg-gradient-start-1: #313178 ; 
+    --bg-gradient-end-1: #313178;   
+    --bg-gradient-start-2: #313178 ; 
+    --bg-gradient-end-2: #313178 ;   
+    --bg-gradient-start-3: #313178 ; 
+    --bg-gradient-end-3: #313178;   
+    --bg-gradient-start-4: #313178 ; 
+    --bg-gradient-end-4: #313178 ;   
 
     /* Couleurs Glassy */
     --glass-bg-color: rgb(0 0 0 / 15%);; 
@@ -19,8 +19,8 @@
     --glass-inset-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1);
 
     /* Couleurs du texte */
-    --text-color-primary: #e0e0e0;
-    --text-color-secondary: #c0c0c0;
+    --text-color-primary: #ffffff;
+    --text-color-secondary: #ffffff;
     --header-color: #ffffff;
     --active-item-color: #93f7ff; 
 

@@ -215,6 +215,21 @@ namespace Meeting.Controllers
 
             return Ok(projects);
         }
+        [HttpGet("user-project-counts")]
+        public async Task<IActionResult> GetProjectCountsPerUser()
+        {
+            var userProjectCounts = await _db.Users
+                .Select(user => new
+                {
+                    UserId = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    ProjectCount = _db.ProjectUsers.Count(pu => pu.UserId == user.Id)
+                })
+                .ToListAsync();
+
+            return Ok(userProjectCounts);
+        }
 
     }
 }

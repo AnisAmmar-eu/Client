@@ -351,6 +351,27 @@ namespace Admin.Controllers
                 return StatusCode(500, $"Erreur serveur : {ex.Message} - StackTrace: {ex.StackTrace}");
             }
         }
+        [HttpGet("{meetingId}/participants")]
+        public async Task<IActionResult> GetParticipantsForMeeting(Guid meetingId)
+        {
+            try
+            {
+                var participants = await _db.Meetings
+                    .Where(m => m.Id == meetingId)
+                    .SelectMany(m => m.Tasks)
+                    .Where(t => t.AssignedTo != null)
+                    .Select(t => t.AssignedTo)
+                    .Distinct()
+                    .ToListAsync();
+
+                return Ok(participants);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erreur serveur : {ex.Message} - StackTrace: {ex.StackTrace}");
+            }
+        }
+
 
 
 

@@ -2,6 +2,7 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
+  "main": "main.js", 
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@testing-library/dom": "^10.4.0",
@@ -18,11 +19,20 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.5",
+    "concurrently": "^9.0.1",
+    "wait-on": "^8.0.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron": "electron .",
+    "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "package": "electron-builder"
   },
   "eslintConfig": {
     "extends": [
@@ -41,5 +51,22 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "build": {
+    "appId": "com.myapp",
+    "productName": "MyApp",
+    "files": [
+      "build/**/*",
+      "main.js"
+    ],
+    "win": {
+      "target": ["nsis"]
+    },
+    "mac": {
+      "target": ["dmg"]
+    },
+    "linux": {
+      "target": ["AppImage"]
+    }
   }
 }
