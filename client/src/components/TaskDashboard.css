@@ -32,6 +32,7 @@
     gap: 10px;
     flex-wrap: wrap;
 }
+
 /* Task count badge styling */
 .task-count {
     position: absolute;
@@ -73,10 +74,6 @@
 
 .badge:hover {
     background: #8585f6;
-}
-
-.badge i {
-    margin-right: 5px;
 }
 
 .select-group {
@@ -126,6 +123,38 @@
     cursor: not-allowed;
 }
 
+/* Style pour les tâches terminées */
+.completed-task {
+    opacity: 0.7;
+    background-color: #e6f4ea;
+    border-left: 4px solid #28a745;
+}
+
+/* Style pour l'icône de statut terminé */
+.completed-icon {
+    cursor: pointer;
+    color: #ccc;
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+.completed-icon.active {
+    color: #28a745;
+}
+
+/* Style pour le badge de statut */
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #fff;
+    margin-left: 10px;
+}
+
+.status-completed {
+    background-color: #28a745;
+}
+
 .add-item-button:hover:not(:disabled) {
     color: var(--button-hover-bg-color);
 }
@@ -138,16 +167,20 @@
 
 .custom-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 20px; 
 }
 
 .task-list li {
-    padding: 15px;
-    border-radius: 8px;
+    padding: 20px; 
+    border-radius: 10px; 
     background: rgba(255, 255, 255, 0.05);
     cursor: pointer;
     transition: background 0.2s ease, transform 0.1s ease;
+    min-height: 200px; 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .task-list li:hover {
@@ -180,12 +213,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 15px; /* Plus d'espace sous le titre */
+}
+
+.task-header strong {
+    font-size: 1.2em; /* Augmenter la taille du titre */
 }
 
 .task-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px; /* Plus d'espace entre les actions */
     align-items: center;
 }
 
@@ -194,6 +231,7 @@
     color: #F44336;
     opacity: 0.5;
     transition: opacity 0.2s ease;
+    font-size: 18px; /* Légèrement plus grand */
 }
 
 .urgent-icon.active {
@@ -205,9 +243,9 @@
 }
 
 .priority-badge {
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.8em;
+    padding: 3px 10px; /* Légèrement plus grand */
+    border-radius: 12px;
+    font-size: 0.9em; /* Augmenter la taille de la police */
 }
 
 .priority-badge.priority-low {
@@ -231,14 +269,16 @@
 }
 
 .task-description {
-    margin: 10px 0;
+    margin: 15px 0; /* Plus d'espace */
     color: var(--text-color-secondary);
+    font-size: 1em; /* Augmenter la taille de la police */
+    overflow-wrap: break-word; /* S'assurer que le texte s'adapte */
 }
 
 .task-meta {
     display: flex;
     justify-content: space-between;
-    font-size: 0.9em;
+    font-size: 0.95em; /* Légèrement plus grand */
     color: var(--text-color-secondary);
 }
 
@@ -248,7 +288,8 @@
 }
 
 .task-meta i {
-    margin-right: 5px;
+    margin-right: 6px;
+    font-size: 1em; /* Légèrement plus grand */
 }
 
 .loading-message,

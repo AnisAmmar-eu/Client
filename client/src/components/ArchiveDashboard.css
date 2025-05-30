@@ -35,7 +35,7 @@
 @import './responsive.css';
 
 .archive-dashboard-container {
-    background: var(--dark-bg-color); /* Use the primary dark color */
+    background: var(--dark-bg-color); 
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -51,23 +51,25 @@
     max-width: 1400px;
     height: 99.4vh;
     padding-left: 10px;
+    border-radius: 8px;
+
 }
 
 .archive-list-panel {
-    background: rgba(49, 49, 120, 0.3); /* #313178 with 30% opacity */
+    background: rgba(49, 49, 120, 0.3); 
     backdrop-filter: blur(var(--glass-blur-amount));
-    border: 1px solid rgba(49, 49, 120, 0.3); /* Border matching background */
+    border: 1px solid rgba(49, 49, 120, 0.3);
     border-radius: none;
     padding: 20px;
     box-shadow: 0 8px 15px 0 rgba(0, 0, 0, 0.3);
     color: var(--text-color-primary);
     overflow-y: auto;
-    max-height: 88.8vh;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 0px;
-    border-bottom-right-radius: 0px;
-    border-top-right-radius: 0px;
-    margin-top: -2px;
+    max-height: 94.8vh;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-top-right-radius: 8px;
+    margin-top: -30px;
 }
 
 .archive-detail-panel {
@@ -79,12 +81,12 @@
     box-shadow: 0 8px 15px 0 rgba(0, 0, 0, 0.3);
     color: var(--text-color-primary);
     overflow-y: auto;
-    max-height: 88.8vh;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 0px;
-    border-bottom-right-radius: 75px;
-    border-top-right-radius: 75px;
-    margin-top: -2px;
+    max-height: 94.8vh;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-top-right-radius: 8px;
+    margin-top: -30px;
 }
 
 .archive-detail-panel {
@@ -473,7 +475,18 @@
     padding: 0;
     margin: 15px 0;
 }
+/* Close icon */
+.close-icon {
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--text-light-color);
+  transition: var(--transition-ease);
+  float: right;
+}
 
+.close-icon:hover {
+  color: var(--accent-color);
+}
 .entry-item {
     background: rgba(49, 49, 120, 0.4); /* Dark color with transparency */
     border-radius: 10px;

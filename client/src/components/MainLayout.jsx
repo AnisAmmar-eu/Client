@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
-import { FaTachometerAlt, FaTasks, FaCalendarAlt, FaArchive, FaSignOutAlt, FaProjectDiagram, FaCog } from 'react-icons/fa';
+import {
+    FaTachometerAlt,
+    FaTasks,
+    FaCalendarAlt,
+    FaArchive,
+    FaSignOutAlt,
+    FaProjectDiagram,
+    FaCog,
+} from 'react-icons/fa';
 import './MainLayout.css';
 
 const getAuthToken = () => localStorage.getItem('authToken');
@@ -37,9 +45,7 @@ const MainLayout = () => {
         navigate('/login');
     };
 
-    if (!isLoggedIn) {
-        return null;
-    }
+    if (!isLoggedIn) return null;
 
     return (
         <div className="project-dashboard-container">
@@ -52,6 +58,7 @@ const MainLayout = () => {
                             className="app-logo"
                         />
                     </div>
+
                     <ul className="sidebar-nav">
                         <li>
                             <NavLink
@@ -98,25 +105,23 @@ const MainLayout = () => {
                                 Archive
                             </NavLink>
                         </li>
-                        <div className="sidebar-bottom-section">
-                            <li>
-                                <NavLink
-                                    to="/settings"
-                                    className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-                                >
-                                    <FaCog className="nav-icon" />
-                                    <span>Paramètres</span>
-                                </NavLink>
-                            </li>
-                            <li>
-                                <button className="nav-link logout-button" onClick={handleLogout}>
-                                    <FaSignOutAlt className="nav-icon" />
-                                </button>
-                            </li>
-                        </div>
-
                     </ul>
+
+                    <div className="sidebar-bottom-section">
+                        <NavLink
+                            to="/settings"
+                            className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                        >
+                            <FaCog className="nav-icon" />
+                            <span>Paramètres</span>
+                        </NavLink>
+                        <button className="nav-link logout-button" onClick={handleLogout}>
+                            <FaSignOutAlt className="nav-icon" />
+                            <span>Déconnexion</span>
+                        </button>
+                    </div>
                 </nav>
+
                 <main className="project-dashboard-content">
                     <Outlet />
                 </main>

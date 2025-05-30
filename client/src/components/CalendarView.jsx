@@ -8,64 +8,92 @@ import './CalendarView.css';
 moment.locale('fr');
 const localizer = momentLocalizer(moment);
 
-const CalendarView = ({ userId }) => {
+const EventComponent = ({ event }) => {
+    const link = event.resource.meetingLink || null;
+    return (
+        <div className="calendar-event">
+            <span className="calendar-event-title">{event.title}</span>
+            <div className="calendar-event-link">
+                {link ? (
+                    <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="calendar-link"
+                    >
+                        Rejoindre via Jitsi Meet
+                    </a>
+                ) : (
+                    <span>Aucun lien disponible</span>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const CalendarView = () => {
     const [events, setEvents] = useState([]);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        async function fetchProjects() {
+        async function fetchMeetings() {
             try {
                 const token = localStorage.getItem('authToken');
                 if (!token) {
-                    console.error('Aucun token d\'authentification trouvé');
-                    return;
+                    throw new Error('Aucun token d\'authentification.');
                 }
 
-                const response = await fetch(`https://localhost:7212/api/Project/by-user/${userId}`, {
+                const response = await fetch('https://localhost:7212/api/Meeting/my-meetings', {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
                     }
                 });
 
                 if (!response.ok) {
-                    throw new Error('Erreur lors du chargement des projets');
+                    if (response.status === 401) {
+                        throw new Error('Session expirée. Veuillez vous reconnecter.');
+                    }
+                    throw new Error(`Erreur HTTP: ${response.status}`);
                 }
 
-                const projects = await response.json();
-                const projectList = projects.$values || projects;
+                const meetings = await response.json();
+                const meetingList = meetings.$values || meetings;
 
-                const events = projectList.map(project => ({
-                    id: project.id,
-                    title: project.name || 'Projet sans nom',
-                    start: new Date(project.createdAt || project.CreatedAt), 
-                    end: new Date(project.createdAt || project.CreatedAt),
-                    allDay: true, 
+                const events = meetingList.map(meeting => ({
+                    id: meeting.id,
+                    title: meeting.title || 'Réunion sans titre',
+                    start: new Date(meeting.date),
+                    end: new Date(meeting.date), // Même date si pas d'endDate
+                    allDay: false,
                     resource: {
-                        type: 'project',
-                        description: project.description || 'Aucune description',
-                    },
-                    color: '#1B263B' 
+                        type: 'meeting',
+                        description: meeting.description || 'Aucune description',
+                        meetingLink: meeting.meetingLink || null
+                    }
                 }));
 
                 setEvents(events);
+                setError(null);
             } catch (error) {
-                console.error('Erreur lors de la récupération des projets:', error);
+                console.error('Erreur lors de la récupération des réunions:', error);
+                setError(error.message || 'Impossible de charger les réunions.');
             }
         }
 
-        if (userId) {
-            fetchProjects();
-        }
-    }, [userId]);
+        fetchMeetings();
+    }, []);
 
     const eventPropGetter = (event) => ({
         style: {
-            backgroundColor: event.color,
+            backgroundColor: '#1B263B',
             borderRadius: '5px',
             opacity: 0.9,
-            color: 'white',
+            color: '#ffffff',
             border: '0px',
             display: 'block',
-            padding: '5px',
+            padding: '5px'
         }
     });
 
@@ -81,13 +109,14 @@ const CalendarView = ({ userId }) => {
         date: 'Date',
         time: 'Heure',
         event: 'Événement',
-        noEventsInRange: 'Aucun projet dans cette plage.',
-        showMore: total => `+ ${total} plus`,
+        noEventsInRange: 'Aucune réunion dans cette plage.',
+        showMore: total => `+ ${total} plus`
     };
 
     return (
         <div className="calendar-container card glass-effect">
-            <h2 className="calendar-title"><i className="fas fa-calendar-alt"></i> Mes Projets par Date de Création</h2>
+            <h2 className="calendar-title"><i className="fas fa-calendar-alt"></i> Mes Réunions</h2>
+            {error && <div className="error-message">{error}</div>}
             <Calendar
                 localizer={localizer}
                 events={events}
@@ -98,6 +127,7 @@ const CalendarView = ({ userId }) => {
                 eventPropGetter={eventPropGetter}
                 defaultView="month"
                 views={['month', 'week', 'day', 'agenda']}
+                components={{ event: EventComponent }}
             />
         </div>
     );

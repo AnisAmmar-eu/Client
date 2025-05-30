@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './ArchiveDashboard.css';
 import { useNavigate } from 'react-router-dom'; 
 import { Trash } from 'lucide-react';
+import {  FaTimes } from 'react-icons/fa';
 
 const ArchiveDashboard = () => {
     const [archivedMeetings, setArchivedMeetings] = useState([]);
@@ -375,11 +376,10 @@ const ArchiveDashboard = () => {
                                                 <span className="item-type">{item.template.name}</span>
                                             )}
                                         </div>
-                                        <Trash
-                                            className="delete-meeting-icon"
-                                            onClick={(event) => handleDeleteMeeting(item.id, event)}
-                                            title="Supprimer cette réunion archivée (Action irréversible)"
-                                        />
+                                        <FaTimes className="close-icon"                                             
+                                        onClick={(event) => handleDeleteMeeting(item.id, event)}
+                                        title="Fermer" />
+                                        
                                     </div>
                                     <div className="item-meta">
                                         <span><i className="far fa-calendar-alt"></i> {formatSimpleDate(item.date)}</span>

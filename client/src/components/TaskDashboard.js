@@ -137,7 +137,7 @@ const TaskDashboard = () => {
         };
         fetchMeetings();
     }, [selectedProjectId, navigate]);
-    // Calculate task counts for each filter
+
     const calculateTaskCounts = () => {
         const now = new Date();
         const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
@@ -162,6 +162,7 @@ const TaskDashboard = () => {
             }).length,
             urgent: tasks.filter(task => task.priority === 'Urgent').length,
             assignedToMe: tasks.filter(task => task.assignedToUserId === currentUserId).length,
+            completed: tasks.filter(task => task.status === 'Completed').length
         };
     };
 
@@ -240,8 +241,11 @@ const TaskDashboard = () => {
             dueDate: '',
             priority: 'Normal',
             assignedToUserId: '',
+            status: 'Pending'
         };
         setTasks(prevTasks => [newTask, ...prevTasks]);
+        setSelectedTask(newTask);
+        setIsModalOpen(true);
     };
 
     const handleSelectTask = (task) => {
@@ -294,7 +298,8 @@ const TaskDashboard = () => {
             dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate).toISOString() : null,
             priority: selectedTask.priority,
             assignedToUserId: selectedTask.assignedToUserId,
-            meetingId: selectedMeetingId
+            meetingId: selectedMeetingId,
+            status: selectedTask.status || 'Pending'
         };
 
         if (!isNew) {
@@ -382,7 +387,6 @@ const TaskDashboard = () => {
             if (response.ok) {
                 const data = await response.json();
                 console.log('Attachment uploaded:', data.attachment);
-                setSuccess('Fichier PDF téléchargé avec succès !');
             } else if (response.status === 401) {
                 setError('Session expirée ou non autorisé pour le téléchargement. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
@@ -396,6 +400,51 @@ const TaskDashboard = () => {
             console.error('Upload attachment error:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggleTaskStatus = async (taskId) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
+        const token = getAuthToken();
+
+        try {
+            const response = await fetch(`https://localhost:7212/api/Task/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    id: taskId,
+                    title: task.title,
+                    description: task.description,
+                    dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+                    priority: task.priority,
+                    assignedToUserId: task.assignedToUserId,
+                    meetingId: selectedMeetingId,
+                    status: newStatus
+                })
+            });
+
+            if (response.ok) {
+                setTasks(prevTasks =>
+                    prevTasks.map(t =>
+                        t.id === taskId ? { ...t, status: newStatus } : t
+                    )
+                );
+            } else if (response.status === 401) {
+                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                setError('Erreur lors de la mise à jour du statut de la tâche.');
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur.');
+            console.error('Toggle task status error:', err);
         }
     };
 
@@ -424,6 +473,8 @@ const TaskDashboard = () => {
                     return task.priority === 'Urgent';
                 case 'assignedToMe':
                     return task.assignedToUserId === currentUserId;
+                case 'completed':
+                    return task.status === 'Completed';
                 case 'all':
                 default:
                     return true;
@@ -446,7 +497,6 @@ const TaskDashboard = () => {
     return (
         <div className="task-dashboard-container">
             <div className="task-section glass-effect">
-                {/* Fusion des badges et sélecteurs en haut de task-section */}
                 <div className="filter-and-select-group">
                     <div className="filter-badges">
                         <span
@@ -483,6 +533,13 @@ const TaskDashboard = () => {
                         >
                             <i className="fas fa-user-circle"></i> À moi
                             {taskCounts.assignedToMe > 0 && <span className="task-count">{taskCounts.assignedToMe}</span>}
+                        </span>
+                        <span
+                            className={`badge ${currentFilter === 'completed' ? 'active' : ''}`}
+                            onClick={() => setCurrentFilter('completed')}
+                        >
+                            <i className="fas fa-check-circle"></i> Terminées
+                            {taskCounts.completed > 0 && <span className="task-count">{taskCounts.completed}</span>}
                         </span>
                     </div>
 
@@ -523,7 +580,8 @@ const TaskDashboard = () => {
                                     currentFilter === 'today' ? "d'aujourd'hui" :
                                         currentFilter === 'thisWeek' ? 'de cette semaine' :
                                             currentFilter === 'urgent' ? 'urgentes' :
-                                                currentFilter === 'assignedToMe' ? 'qui me sont assignées' : ''
+                                                currentFilter === 'assignedToMe' ? 'qui me sont assignées' :
+                                                    currentFilter === 'completed' ? 'terminées' : ''
                             }
                         </h3>
 
@@ -536,24 +594,33 @@ const TaskDashboard = () => {
                     </div>
                     {loading && <p className="loading-message">Chargement des tâches...</p>}
                     {error && <div className="error-message">{error}</div>}
+                    {success && <div className="success-message">{success}</div>}
                     <ul className="task-list custom-list">
                         {filteredTasks.length === 0 && !loading && !error && selectedMeetingId && <p className="no-items-message">Aucune tâche pour cette sélection.</p>}
                         {!selectedMeetingId && <p className="no-items-message">Sélectionnez une réunion pour voir les tâches.</p>}
                         {filteredTasks.map(task => (
                             <li
                                 key={task.id}
-                                className={`priority-${(task.priority || 'Normal').toLowerCase()} ${selectedTask && selectedTask.id === task.id ? 'selected-card' : ''}`}
+                                className={`priority-${(task.priority || 'Normal').toLowerCase()} ${selectedTask && selectedTask.id === task.id ? 'selected-card' : ''} ${task.status === 'Completed' ? 'completed-task' : ''}`}
                                 onClick={() => handleSelectTask(task)}
                             >
                                 <div className="task-header">
                                     <strong>{task.title || "Nouvelle tâche"}</strong>
                                     <div className="task-actions">
                                         <i
+                                            className={`fas fa-check-circle completed-icon ${task.status === 'Completed' ? 'active' : ''}`}
+                                            onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id); }}
+                                            title={task.status === 'Completed' ? 'Marquer comme non terminé' : 'Marquer comme terminé'}
+                                        ></i>
+                                        <i
                                             className={`fas fa-exclamation-triangle urgent-icon ${task.priority === 'Urgent' ? 'active' : ''}`}
                                             onClick={(e) => { e.stopPropagation(); toggleUrgentPriority(task.id); }}
                                             title="Basculer la priorité Urgent"
                                         ></i>
                                         <span className={`priority-badge priority-${(task.priority || 'Normal').toLowerCase()}`}>{task.priority || 'N/A'}</span>
+                                        {task.status === 'Completed' && (
+                                            <span className="status-badge status-completed">Terminé</span>
+                                        )}
                                     </div>
                                 </div>
                                 <p className="task-description">{task.description || "Aucune description"}</p>
@@ -569,7 +636,6 @@ const TaskDashboard = () => {
                 </div>
             </div>
 
-            {/* Pop-up (Modal) */}
             {isModalOpen && selectedTask && (
                 <div className="modal-overlay">
                     <div className="modal-content glass-effect">
@@ -621,6 +687,18 @@ const TaskDashboard = () => {
                                     <option value="Normal">Normale</option>
                                     <option value="High">Haute</option>
                                     <option value="Urgent">Urgente</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="taskStatus">Statut</label>
+                                <select
+                                    id="taskStatus"
+                                    name="status"
+                                    value={selectedTask?.status || 'Pending'}
+                                    onChange={handleFormChange}
+                                >
+                                    <option value="Pending">En cours</option>
+                                    <option value="Completed">Terminé</option>
                                 </select>
                             </div>
                             <div className="form-group">

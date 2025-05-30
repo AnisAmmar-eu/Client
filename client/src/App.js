@@ -1,45 +1,44 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import React from 'react';
+import { Route, Routes, Navigate } from 'react-router-dom';
+
 import Login from './components/login';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Register from './components/Register';
 import ProjectDashboard from './components/ProjectDashboard';
-import '@fortawesome/fontawesome-free/css/all.min.css'; // Pour les icônes
 import MeetingDashboard from './components/MeetingDashboard';
 import TaskDashboard from './components/TaskDashboard';
-import './App.css';
-import DashboardHome from './components/DashboardHome';
-import MainLayout from './components/MainLayout';
 import ArchiveDashboard from './components/ArchiveDashboard';
-import IntroPanel from './components/IntroPanel';
-import Register from './components/Register';
 import CalendarView from './components/CalendarView';
+import IntroPanel from './components/IntroPanel';
+import MainLayout from './components/MainLayout';
+
+import './App.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
+import AuthCallback from './components/AuthCallback';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public route: Login Page */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} /> {/* Add the Register route here */}
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-        {/* Protected routes wrapped by MainLayout */}
-        {/* The <Outlet> in MainLayout will render the matching child route component */}
-        <Route element={<MainLayout />}>
-          {/* Redirect from root to /dashboard if logged in */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/dashboard" element={<IntroPanel />} />
-          <Route path="/projects" element={<ProjectDashboard />} />
-          <Route path="/meetings" element={<MeetingDashboard />} />
-          <Route path="/tasks" element={<TaskDashboard />} />
-          <Route path="/archive" element={<ArchiveDashboard/>} />
-            <Route path="/calendar" element={<CalendarView />} />
+      {/* Routes protégées avec layout principal */}
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/dashboard" element={<IntroPanel />} />
+        <Route path="/projects" element={<ProjectDashboard />} />
+        <Route path="/meetings" element={<MeetingDashboard />} />
+        <Route path="/tasks" element={<TaskDashboard />} />
+        <Route path="/archive" element={<ArchiveDashboard />} />
+        <Route path="/calendar" element={<CalendarView />} />
+        <Route path="/auth-callback" element={<AuthCallback />} />
 
-        </Route>
+      </Route>
 
-        {/* Fallback route for any unmatched paths, redirects to dashboard */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }
 

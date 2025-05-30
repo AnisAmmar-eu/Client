@@ -621,7 +621,7 @@ const ProjectDashboard = () => {
                                                 className="icon-button submit-button"
                                                 title="Créer l'utilisateur"
                                             >
-                                                {loading ? '...' : <FaCheck size={20} />}
+                                                {loading ? '...' : <FaCheck size={10} />}
                                             </button>
                                         )}
                                     </form>
@@ -649,7 +649,7 @@ const ProjectDashboard = () => {
                                         </div>
                                         {excelFile && (
                                             <button type="submit" disabled={loading || !getAuthToken()} className="icon-button submit-button" title="Importer les utilisateurs">
-                                                {loading ? '...' : <FaCheck size={20} />}
+                                                {loading ? '...' : <FaCheck size={15} />}
                                             </button>
                                         )}
                                     </form>

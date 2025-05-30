@@ -3,8 +3,8 @@ import './MeetingDashboard.css';
 import { useNavigate } from 'react-router-dom';
 import DescriptionModal from './DescriptionModale';
 import AgendaModal from './AgendaModale';
-import ObjectivesModal from './ObjectivesModale';
-import { Archive } from 'lucide-react';
+import ObjectivesModale from './ObjectivesModale';
+import { Archive, Plus } from 'lucide-react';
 
 const CheckboxDropdown = ({ label, options, selectedValues, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -83,6 +83,71 @@ const CheckboxDropdown = ({ label, options, selectedValues, onChange }) => {
     );
 };
 
+const SingleSelectDropdown = ({ label, options, selectedValue, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    const handleToggle = () => {
+        setIsOpen(!isOpen);
+    };
+
+    const handleRadioChange = (e) => {
+        const value = e.target.value;
+        onChange(value);
+        setIsOpen(false);
+    };
+
+    const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            setIsOpen(false);
+        }
+    };
+
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const getDisplayValue = () => {
+        if (!selectedValue) {
+            return `Sélectionner ${label}`;
+        }
+        const selectedOption = options.find(opt => opt.id === selectedValue);
+        return selectedOption ? selectedOption.name : `Sélectionner ${label}`;
+    };
+
+    return (
+        <div className="md-checkbox-dropdown" ref={dropdownRef}>
+            <div className="md-dropdown-header" onClick={handleToggle}>
+                {getDisplayValue()}
+                <span className="md-dropdown-arrow">{isOpen ? '▲' : '▼'}</span>
+            </div>
+            {isOpen && (
+                <div className="md-dropdown-list">
+                    {options.length === 0 ? (
+                        <div className="md-dropdown-item disabled">Aucun {label.toLowerCase()} disponible</div>
+                    ) : (
+                        options.map(option => (
+                            <label key={option.id} className="md-dropdown-item">
+                                <input
+                                    type="radio"
+                                    name={label}
+                                    value={option.id}
+                                    checked={selectedValue === option.id}
+                                    onChange={handleRadioChange}
+                                />
+                                {option.name}
+                            </label>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const MeetingsDashboard = () => {
     const [meetings, setMeetings] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -105,12 +170,29 @@ const MeetingsDashboard = () => {
     const [showDescriptionModal, setShowDescriptionModal] = useState(false);
     const [showAgendaModal, setShowAgendaModal] = useState(false);
     const [showObjectivesModal, setShowObjectivesModal] = useState(false);
+    const [showTemplateForm, setShowTemplateForm] = useState(false);
+    const [showTemplateAgendaModal, setShowTemplateAgendaModal] = useState(false);
+    const [showTemplateObjectivesModal, setShowTemplateObjectivesModal] = useState(false);
+    const [newTemplateData, setNewTemplateData] = useState({
+        name: '',
+        agenda: '',
+        objectives: '',
+        nonObjectives: ''
+    });
     const [newlyCreatedMeetingId, setNewlyCreatedMeetingId] = useState(null);
     const [sendingInvitations, setSendingInvitations] = useState(false);
-    const [selectedMeeting, setSelectedMeeting] = useState(null); // Nouvel état pour la réunion sélectionnée
-    const [meetingParticipants, setMeetingParticipants] = useState([]); // État pour les participants de la réunion
+    const [selectedMeeting, setSelectedMeeting] = useState(null);
+    const [meetingParticipants, setMeetingParticipants] = useState([]);
+    const [contextMenu, setContextMenu] = useState({
+        visible: false,
+        x: 0,
+        y: 0,
+        meetingId: null,
+        selectedUserIds: []
+    });
 
     const navigate = useNavigate();
+    const contextMenuRef = useRef(null);
     const getAuthToken = () => localStorage.getItem('authToken');
 
     useEffect(() => {
@@ -127,14 +209,28 @@ const MeetingsDashboard = () => {
     useEffect(() => {
         if (selectedProjectId) {
             fetchMeetings(selectedProjectId);
+            setNewMeetingData(prev => ({ ...prev, projectId: selectedProjectId }));
         } else if (projects.length > 0) {
             setSelectedProjectId(projects[0].id);
             setNewMeetingData(prev => ({ ...prev, projectId: projects[0].id }));
             fetchMeetings(projects[0].id);
         } else {
             setMeetings([]);
+            setNewMeetingData(prev => ({ ...prev, projectId: '' }));
         }
     }, [selectedProjectId, projects]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
+                setContextMenu(prev => ({ ...prev, visible: false }));
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const fetchMeetingParticipants = async (meetingId) => {
         setLoading(true);
@@ -195,13 +291,15 @@ const MeetingsDashboard = () => {
             setLoading(false);
         }
     };
+
     const getTodayDate = () => {
         const today = new Date();
         const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); 
+        const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
+
     const fetchUsers = async () => {
         setLoading(true);
         setError('');
@@ -254,6 +352,119 @@ const MeetingsDashboard = () => {
         }
     };
 
+    const parseAgendaStringToArray = (agendaString) => {
+        if (!agendaString) {
+            return [{ title: '', start: '', duration: '', finish: '' }];
+        }
+        return agendaString.split('\n')
+            .filter(line => line.trim() !== '')
+            .map(line => ({
+                title: line.trim(),
+                start: '',
+                duration: '',
+                finish: ''
+            }));
+    };
+
+    const convertAgendaArrayToString = (agendaArray) => {
+        if (!agendaArray || agendaArray.length === 0) {
+            return '';
+        }
+        return agendaArray.map(item => item.title).join('\n');
+    };
+
+    const parseObjectivesStringToArray = (objectives, nonObjectives) => {
+        const objLines = objectives ? objectives.split('\n').filter(line => line.trim()) : [];
+        const nonObjLines = nonObjectives ? nonObjectives.split('\n').filter(line => line.trim()) : [];
+        const maxLength = Math.max(objLines.length, nonObjLines.length, 1);
+        const rows = [];
+        for (let i = 0; i < maxLength; i++) {
+            rows.push({
+                objective: objLines[i] || '',
+                nonObjective: nonObjLines[i] || ''
+            });
+        }
+        return rows;
+    };
+
+    const convertObjectivesArrayToStrings = (rows) => {
+        const objectives = rows.map(row => row.objective).filter(obj => obj.trim()).join('\n');
+        const nonObjectives = rows.map(row => row.nonObjective).filter(nonObj => nonObj.trim()).join('\n');
+        return { objectives, nonObjectives };
+    };
+
+    const createTemplate = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccess('');
+        const token = getAuthToken();
+
+        if (!token) {
+            setError('Vous devez être connecté pour créer un modèle.');
+            setLoading(false);
+            navigate('/login');
+            return;
+        }
+
+        if (!newTemplateData.name) {
+            setError('Le nom du modèle est requis.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch('https://localhost:7212/api/Template', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(newTemplateData)
+            });
+
+            if (response.ok) {
+                setSuccess(`Modèle "${newTemplateData.name}" créé avec succès.`);
+                setNewTemplateData({
+                    name: '',
+                    agenda: '',
+                    objectives: '',
+                    nonObjectives: ''
+                });
+                setShowTemplateForm(false);
+                await fetchTemplates();
+            } else if (response.status === 401) {
+                setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
+                localStorage.removeItem('authToken');
+                navigate('/login');
+            } else {
+                const errorText = await response.text();
+                setError(`Erreur lors de la création du modèle: ${errorText}`);
+            }
+        } catch (err) {
+            setError('Erreur réseau ou du serveur.');
+            console.error('Create template error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTemplateNameChange = (e) => {
+        setNewTemplateData(prev => ({ ...prev, name: e.target.value }));
+    };
+
+    const handleTemplateAgendaSave = (agendaArray) => {
+        const agendaString = convertAgendaArrayToString(agendaArray);
+        setNewTemplateData(prev => ({ ...prev, agenda: agendaString }));
+        setShowTemplateAgendaModal(false);
+    };
+
+    const handleTemplateObjectivesSave = (rows) => {
+        const { objectives, nonObjectives } = convertObjectivesArrayToStrings(rows);
+        setNewTemplateData(prev => ({ ...prev, objectives, nonObjectives }));
+        setShowTemplateObjectivesModal(false);
+    };
+
     const fetchMeetings = async (projectId) => {
         setLoading(true);
         setError('');
@@ -287,6 +498,14 @@ const MeetingsDashboard = () => {
     const handleNewMeetingChange = (e) => {
         const { name, value } = e.target;
         setNewMeetingData(prevData => ({ ...prevData, [name]: value }));
+        if (name === 'projectId') {
+            setSelectedProjectId(value);
+        }
+    };
+
+    const handleProjectChange = (value) => {
+        setSelectedProjectId(value);
+        setNewMeetingData(prev => ({ ...prev, projectId: value }));
     };
 
     const handleParticipantChange = (selectedValues) => {
@@ -305,8 +524,18 @@ const MeetingsDashboard = () => {
         setShowDescriptionModal(true);
     };
 
+    const handleSaveAgenda = (agendaArray) => {
+        const agendaString = convertAgendaArrayToString(agendaArray);
+        setNewMeetingData(prev => ({ ...prev, agenda: agendaString }));
+        setShowAgendaModal(false);
+    };
 
-    const handleSaveObjectives = (objectives) => {
+    const handleOpenAgendaModal = () => {
+        setShowAgendaModal(true);
+    };
+
+    const handleSaveObjectives = (rows) => {
+        const { objectives } = convertObjectivesArrayToStrings(rows);
         setNewMeetingData(prev => ({ ...prev, objectives }));
         setShowObjectivesModal(false);
     };
@@ -347,9 +576,6 @@ const MeetingsDashboard = () => {
             projectId: newMeetingData.projectId
         };
 
-        console.log("Meeting data being sent:", meetingToCreate);
-        console.log("ProjectId before fetch:", newMeetingData.projectId);
-
         try {
             const response = await fetch('https://localhost:7212/api/Meeting', {
                 method: 'POST',
@@ -364,6 +590,11 @@ const MeetingsDashboard = () => {
                 const createdMeeting = await response.json();
                 setNewlyCreatedMeetingId(createdMeeting.id);
                 setSuccess(`Réunion "${createdMeeting.title}" créée avec succès.`);
+
+                // Si des participants sont sélectionnés, les assigner immédiatement
+                if (selectedParticipantIds.length > 0) {
+                    await sendMeetingInvitations(createdMeeting.id, selectedParticipantIds);
+                }
 
                 setNewMeetingData(prev => ({
                     ...prev,
@@ -424,7 +655,26 @@ const MeetingsDashboard = () => {
         }
 
         try {
-            const response = await fetch(`https://localhost:7212/api/Meeting/${meetingId}/invite`, {
+            // Étape 1 : Assigner chaque participant à la réunion
+            for (const userId of participantIds) {
+                const assignResponse = await fetch(`https://localhost:7212/api/Meeting/${meetingId}/assign/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!assignResponse.ok) {
+                    const errorText = await assignResponse.text();
+                    setError(`Erreur lors de l'assignation de l'utilisateur ${userId}: ${errorText}`);
+                    setSendingInvitations(false);
+                    return;
+                }
+            }
+
+            await fetchMeetingParticipants(meetingId);
+
+            const inviteResponse = await fetch(`https://localhost:7212/api/Meeting/${meetingId}/invite`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -433,19 +683,20 @@ const MeetingsDashboard = () => {
                 body: JSON.stringify(participantIds)
             });
 
-            if (response.ok) {
+            if (inviteResponse.ok) {
                 setNewlyCreatedMeetingId(null);
                 setSelectedParticipantIds([]);
-            } else if (response.status === 401) {
+                setContextMenu(prev => ({ ...prev, visible: false, selectedUserIds: [] }));
+            } else if (inviteResponse.status === 401) {
                 setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
                 localStorage.removeItem('authToken');
                 navigate('/login');
             } else {
-                const errorText = await response.text();
+                const errorText = await inviteResponse.text();
                 setError(`Erreur lors de l'envoi des invitations: ${errorText}`);
             }
         } catch (err) {
-            setError('Erreur réseau ou du serveur lors de l\'envoi des invitations.');
+            setError('Erreur réseau ou du serveur lors de l\'assignation ou de l\'envoi des invitations.');
             console.error('Send invitations error:', err);
         } finally {
             setSendingInvitations(false);
@@ -475,7 +726,7 @@ const MeetingsDashboard = () => {
             if (response.ok) {
                 setMeetings(prevMeetings => prevMeetings.filter(m => m.id !== meetingId));
                 if (selectedMeeting?.id === meetingId) {
-                    setSelectedMeeting(null); 
+                    setSelectedMeeting(null);
                 }
             } else if (response.status === 401) {
                 setError('Session expirée ou non autorisé. Veuillez vous reconnecter.');
@@ -498,7 +749,39 @@ const MeetingsDashboard = () => {
 
     const handleSelectMeeting = (meeting) => {
         setSelectedMeeting(meeting);
-        fetchMeetingParticipants(meeting.id); 
+        fetchMeetingParticipants(meeting.id);
+    };
+
+    const handleContextMenu = (e, meetingId) => {
+        e.preventDefault();
+        setContextMenu({
+            visible: true,
+            x: e.clientX,
+            y: e.clientY,
+            meetingId,
+            selectedUserIds: []
+        });
+    };
+
+    const handleContextMenuCheckboxChange = (e) => {
+        const { value, checked } = e.target;
+        setContextMenu(prev => {
+            let newSelectedUserIds;
+            if (checked) {
+                newSelectedUserIds = [...prev.selectedUserIds, value];
+            } else {
+                newSelectedUserIds = prev.selectedUserIds.filter(id => id !== value);
+            }
+            return { ...prev, selectedUserIds: newSelectedUserIds };
+        });
+    };
+
+    const handleInviteFromContextMenu = () => {
+        if (contextMenu.meetingId && contextMenu.selectedUserIds.length > 0) {
+            sendMeetingInvitations(contextMenu.meetingId, contextMenu.selectedUserIds);
+        } else {
+            setError('Veuillez sélectionner au moins un participant.');
+        }
     };
 
     const handleBackToForm = () => {
@@ -506,37 +789,6 @@ const MeetingsDashboard = () => {
         setMeetingParticipants([]);
     };
 
-    const parseAgendaStringToArray = (agendaString) => {
-        if (!agendaString) {
-            return [{ title: '', start: '', duration: '', finish: '' }]; 
-        }
-     
-        return agendaString.split('\n')
-            .filter(line => line.trim() !== '')
-            .map(line => ({
-                title: line.trim(),
-                start: '',    
-                duration: '', 
-                finish: ''    
-            }));
-    };
-
-    const convertAgendaArrayToString = (agendaArray) => {
-        if (!agendaArray || agendaArray.length === 0) {
-            return '';
-        }
-        return agendaArray.map(item => item.title).join('\n');
-    };
-
-    const handleSaveAgenda = (agendaArrayFromModal) => {
-        const agendaString = convertAgendaArrayToString(agendaArrayFromModal);
-        setNewMeetingData(prev => ({ ...prev, agenda: agendaString }));
-        setShowAgendaModal(false);
-    };
-
-    const handleOpenAgendaModal = () => {
-        setShowAgendaModal(true);
-    };
     return (
         <div className="md-container">
             <div className="md-content-container">
@@ -544,18 +796,13 @@ const MeetingsDashboard = () => {
                     <div className="md-glassy-card md-project-meetings-card">
                         <h3>Filtrer par Projet</h3>
                         <div className="md-form-group md-project-select-group">
-                            <label htmlFor="selectProjectMeetings">Sélectionner un projet</label>
-                            <select
-                                id="selectProjectMeetings"
-                                value={selectedProjectId}
-                                onChange={(e) => setSelectedProjectId(e.target.value)}
-                                disabled={projects.length === 0}
-                            >
-                                <option value="">-- Tous les projets --</option>
-                                {projects.map(project => (
-                                    <option key={project.id} value={project.id}>{project.name}</option>
-                                ))}
-                            </select>
+                            <label>Sélectionner un projet</label>
+                            <SingleSelectDropdown
+                                label="Projet"
+                                options={projects}
+                                selectedValue={selectedProjectId}
+                                onChange={handleProjectChange}
+                            />
                             {projects.length === 0 && !loading && <p className="md-no-items-message">Aucun projet disponible.</p>}
                         </div>
 
@@ -577,6 +824,7 @@ const MeetingsDashboard = () => {
                                     key={meeting.id}
                                     className={`md-meeting-card md-glassy-card ${selectedMeeting?.id === meeting.id ? 'md-selected' : ''}`}
                                     onClick={() => handleSelectMeeting(meeting)}
+                                    onContextMenu={(e) => handleContextMenu(e, meeting.id)}
                                     style={{ cursor: 'pointer' }}
                                 >
                                     <div className="md-card-header">
@@ -588,7 +836,7 @@ const MeetingsDashboard = () => {
                                         <Archive
                                             className={`md-icon-button ${loading ? 'disabled' : ''}`}
                                             onClick={(e) => {
-                                                e.stopPropagation(); 
+                                                e.stopPropagation();
                                                 !loading && handleArchiveMeeting(meeting.id, meeting.title);
                                             }}
                                             title="Archiver"
@@ -599,7 +847,14 @@ const MeetingsDashboard = () => {
                         </div>
                     </div>
                     <div className="md-glassy-card md-template-selection-card">
-                        <h4>Utiliser un modèle de réunion</h4>
+                        <div className="md-template-header">
+                            <h4>Utiliser un modèle de réunion</h4>
+                            <Plus
+                                className="md-icon-button"
+                                onClick={() => setShowTemplateForm(true)}
+                                title="Créer un nouveau modèle"
+                            />
+                        </div>
                         {loading && <p className="md-loading-message">Chargement des modèles...</p>}
                         {error && <div className="md-error-message">{error}</div>}
                         {templates.length === 0 && !loading && !error && (
@@ -614,7 +869,6 @@ const MeetingsDashboard = () => {
                                         setNewMeetingData(prev => ({
                                             ...prev,
                                             title: template.name || '',
-                                            description: template.description || '',
                                             agenda: template.agenda || '',
                                             objectives: `${template.objectives || ''}${template.nonObjectives ? '\n\nNon-Objectifs:\n' + template.nonObjectives : ''}`
                                         }));
@@ -684,22 +938,6 @@ const MeetingsDashboard = () => {
                                             <p>Aucun objectif fourni.</p>
                                         )}
                                     </div>
-                                    <div className="md-detail-item">
-                                        <strong>Participants :</strong>
-                                        {loading ? (
-                                            <p>Chargement des participants...</p>
-                                        ) : meetingParticipants.length > 0 ? (
-                                            <ul>
-                                                {meetingParticipants.map(participant => (
-                                                    <li key={participant.id}>
-                                                        {participant.fullName} ({participant.email})
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p>Aucun participant associé.</p>
-                                        )}
-                                    </div>
                                     <button
                                         className="md-glass-button"
                                         onClick={handleBackToForm}
@@ -713,20 +951,13 @@ const MeetingsDashboard = () => {
                                 <h4>Planifier une nouvelle réunion</h4>
                                 <form onSubmit={handleCreateMeeting}>
                                     <div className="md-form-group">
-                                        <label htmlFor="meetingProject">Projet Associé</label>
-                                        <select
-                                            id="meetingProject"
-                                            name="projectId"
-                                            value={newMeetingData.projectId}
-                                            onChange={handleNewMeetingChange}
-                                            required
-                                            disabled={projects.length === 0}
-                                        >
-                                            <option value="">-- Choisir un projet --</option>
-                                            {projects.map(project => (
-                                                <option key={project.id} value={project.id}>{project.name}</option>
-                                            ))}
-                                        </select>
+                                        <label>Projet Associé</label>
+                                        <SingleSelectDropdown
+                                            label="Projet"
+                                            options={projects}
+                                            selectedValue={selectedProjectId}
+                                            onChange={handleProjectChange}
+                                        />
                                     </div>
                                     <div className="md-form-group">
                                         <label htmlFor="meetingTitle">Titre de la Réunion</label>
@@ -743,7 +974,7 @@ const MeetingsDashboard = () => {
                                     <div className="md-form-row" style={{ display: 'flex', gap: '1rem' }}>
                                         <div className="md-form-group">
                                             <label
-                                                className="md-description-card"
+                                                className="md-glassy-card"
                                                 onClick={handleOpenDescriptionModal}
                                                 tabIndex="0"
                                                 role="button"
@@ -759,13 +990,13 @@ const MeetingsDashboard = () => {
                                         </div>
                                         <div className="md-form-group">
                                             <label
-                                                className="md-agenda-card"
+                                                className="md-glassy-card"
                                                 onClick={handleOpenAgendaModal}
                                                 tabIndex="0"
                                                 role="button"
                                                 aria-label="Modifier l'agenda"
                                                 onKeyDown={(e) => {
-                                                    if (e.key === "Enter" || e.key === " ") {
+                                                    if (e.key === "Enter") {
                                                         handleOpenAgendaModal();
                                                     }
                                                 }}
@@ -775,7 +1006,7 @@ const MeetingsDashboard = () => {
                                         </div>
                                         <div className="md-form-group">
                                             <label
-                                                className="md-obj-card"
+                                                className="md-glassy-card"
                                                 onClick={handleOpenObjectivesModal}
                                                 tabIndex="0"
                                                 role="button"
@@ -798,7 +1029,7 @@ const MeetingsDashboard = () => {
                                             name="date"
                                             value={newMeetingData.date}
                                             onChange={handleNewMeetingChange}
-                                            min={getTodayDate()} 
+                                            min={getTodayDate()}
                                             required
                                         />
                                     </div>
@@ -806,7 +1037,7 @@ const MeetingsDashboard = () => {
                                         <label htmlFor="meetingTime">Heure</label>
                                         <input
                                             type="time"
-                                            id="meetingTime"
+                                            id="md"
                                             name="time"
                                             value={newMeetingData.time}
                                             onChange={handleNewMeetingChange}
@@ -817,27 +1048,16 @@ const MeetingsDashboard = () => {
                                         <label htmlFor="meetingDuration">Durée</label>
                                         <input
                                             type="time"
-                                            id="meetingDuration"
+                                            id="time"
                                             name="duration"
                                             value={newMeetingData.duration || ''}
                                             onChange={handleNewMeetingChange}
                                         />
                                     </div>
-                                    <div className="md-form-group">
-                                        <label>Inviter des participants</label>
-                                        <CheckboxDropdown
-                                            label="Participants"
-                                            options={users}
-                                            selectedValues={selectedParticipantIds}
-                                            onChange={handleParticipantChange}
-
-                                        />
-                                        {users.length === 0 && !loading && <p className="md-hint-message">Aucun utilisateur à inviter.</p>}
-                                    </div>
                                     <button
                                         type="submit"
                                         disabled={loading || !getAuthToken() || projects.length === 0 || !newMeetingData.projectId}
-                                        className="md-glass-button md-create-meeting-button"
+                                        className="md-button md-create-meeting-button"
                                     >
                                         {loading ? 'Planification...' : 'Planifier la réunion'}
                                     </button>
@@ -848,7 +1068,7 @@ const MeetingsDashboard = () => {
                                     <div className="md-send-invitations-section">
                                         <p>Réunion créée. Envoyez les invitations aux {selectedParticipantIds.length} participants sélectionnés :</p>
                                         <button
-                                            className="md-glass-button md-send-invites-button"
+                                            className="md-glass-button md-send-invite-button"
                                             onClick={() => sendMeetingInvitations(newlyCreatedMeetingId, selectedParticipantIds)}
                                             disabled={sendingInvitations || loading}
                                         >
@@ -863,24 +1083,134 @@ const MeetingsDashboard = () => {
             </div>
             {showDescriptionModal && (
                 <DescriptionModal
-                    currentDescription={newMeetingData.description}
+                    description={newMeetingData.description}
                     onSave={handleSaveDescription}
                     onCancel={() => setShowDescriptionModal(false)}
                 />
             )}
-        {showAgendaModal && (
-            <AgendaModal
-                agenda={parseAgendaStringToArray(newMeetingData.agenda)} 
-                onSave={handleSaveAgenda}
-                onCancel={() => setShowAgendaModal(false)}
-            />
-        )}
+            {showAgendaModal && (
+                <AgendaModal
+                    agenda={parseAgendaStringToArray(newMeetingData.agenda)}
+                    modal={handleSaveAgenda}
+                    onCancel={() => setShowAgendaModal(false)}
+                />
+            )}
             {showObjectivesModal && (
-                <ObjectivesModal
-                    objectives={newMeetingData.objectives}
-                    onSave={handleSaveObjectives}
+                <ObjectivesModale
+                    objectives={parseObjectivesStringToArray(newMeetingData.objectives, '')}
+                    modal={handleSaveObjectives}
                     onCancel={() => setShowObjectivesModal(false)}
                 />
+            )}
+            {showTemplateForm && (
+                <div className="md-modal-overlay">
+                    <div className="md-modal-content md-glassy-modal">
+                        <h4>Créer un nouveau modèle</h4>
+                        <form onSubmit={createTemplate}>
+                            <div className="md-form-group">
+                                <label htmlFor="id">Nom du modèle</label>
+                                <input
+                                    type="text"
+                                    id="templateName"
+                                    value={newTemplateData.name}
+                                    onChange={handleTemplateNameChange}
+                                    placeholder="Ex: Modèle de réunion hebdomadaire"
+                                    required
+                                />
+                            </div>
+                            <div className="md-form-group">
+                                <label
+                                    className="md-agenda-card"
+                                    onClick={() => setShowTemplateAgendaModal(true)}
+                                    tabIndex="0"
+                                    role="button"
+                                    aria-label="Modifier l'agenda du modèle"
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            setShowTemplateAgendaModal(true);
+                                        }
+                                    }}
+                                >
+                                    Agenda
+                                </label>
+                            </div>
+                            <div className="md-form-group">
+                                <label
+                                    className="md-obj-card"
+                                    onClick={() => setShowTemplateObjectivesModal(true)}
+                                    tabIndex="0"
+                                    role="button"
+                                    aria-label="Modifier les objectifs et non-objectifs du modèle"
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            setShowTemplateObjectivesModal(true);
+                                        }
+                                    }}
+                                >
+                                    Objectifs & Non-Objectifs
+                                </label>
+                            </div>
+                            <div className="md-form-actions">
+                                <button type="submit" className="md-glass-button" disabled={loading}>
+                                    {loading ? 'Création...' : 'Créer le modèle'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="md-glass-button md-cancel-button"
+                                    onClick={() => setShowTemplateForm(false)}
+                                    disabled={loading}
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {showTemplateAgendaModal && (
+                <AgendaModal
+                    agenda={parseAgendaStringToArray(newTemplateData.agenda)}
+                    modal={handleTemplateAgendaSave}
+                    onCancel={() => setShowTemplateAgendaModal(false)}
+                />
+            )}
+            {showTemplateObjectivesModal && (
+                <ObjectivesModale
+                    objectives={parseObjectivesStringToArray(newTemplateData.objectives, newTemplateData.nonObjectives)}
+                    modal={handleTemplateObjectivesSave}
+                    onCancel={() => setShowTemplateObjectivesModal(false)}
+                />
+            )}
+            {contextMenu.visible && (
+                <div
+                    className="md-context-menu md-glassy-card"
+                    style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x, zIndex: 1000 }}
+                    ref={contextMenuRef}
+                >
+                    <h4>Inviter des participants</h4>
+                    {users.length === 0 ? (
+                        <p>Aucun utilisateur disponible.</p>
+                    ) : (
+                        users.map(user => (
+                            <label key={user.id} className="md-dropdown-item">
+                                <input
+                                    type="checkbox"
+                                    value={user.id}
+                                    checked={contextMenu.selectedUserIds.includes(user.id)}
+                                    onChange={handleContextMenuCheckboxChange}
+                                />
+                                {user.fullName} ({user.email})
+                            </label>
+                        ))
+                    )}
+                    <button
+                        className="md-glass-button"
+                        onClick={handleInviteFromContextMenu}
+                        disabled={contextMenu.selectedUserIds.length === 0 || sendingInvitations}
+                    >
+                        {sendingInvitations ? 'Envoi...' : 'Envoyer les invitations'}
+                    </button>
+                </div>
             )}
         </div>
     );

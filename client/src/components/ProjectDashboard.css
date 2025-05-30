@@ -236,33 +236,34 @@ body {
   padding-top: 220px;
 }
 
-/* List item styles */
+/* Compact user list items */
 .project-dashboard-list-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 12px 15px;
-  margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  gap: 10px; /* Reduced gap for a tighter layout */
+  padding: 8px 12px; /* Reduced padding for compactness */
+  margin-bottom: 8px; /* Slightly reduced margin */
+  background: rgba(255, 255, 255, 0.05); /* Lighter background for a cleaner look */
+  border-radius: 10px; /* Slightly more rounded corners for a modern feel */
   border: var(--glass-border);
   cursor: pointer;
   transition: var(--transition-ease);
 }
 
 .project-dashboard-list-item:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15); /* Slightly more pronounced hover effect */
+  transform: translateY(-1px); /* Reduced transform for subtle effect */
 }
 
 .project-dashboard-list-item.active {
   border-color: var(--accent-color);
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2); /* Slightly lighter active state */
 }
 
+/* Smaller user avatar */
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px; /* Reduced size for compactness */
+  height: 32px;
   border-radius: 50%;
   background: var(--accent-color);
   display: flex;
@@ -270,18 +271,20 @@ body {
   align-items: center;
   font-weight: 600;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1rem; /* Smaller font size for avatar initial */
 }
 
+/* Adjusted user name and email */
 .user-list-name {
-  font-weight: 600;
+  font-weight: 500; /* Slightly lighter font weight for a cleaner look */
   color: var(--text-color);
   flex: 1;
+  font-size: 0.95rem; /* Reduced font size */
 }
 
 .user-list-email {
   color: var(--text-light-color);
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* Smaller email font size */
 }
 
 /* User detail card */
@@ -416,30 +419,71 @@ body {
   padding-bottom: 10px;
 }
 
+/* Compact project list items */
 .project-dashboard-list-item.project-item {
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row; /* Changed to row for a more compact layout */
+  align-items: center;
+  gap: 10px; /* Reduced gap */
+  padding: 10px 12px; /* Reduced padding */
+  background: rgba(255, 255, 255, 0.05); /* Lighter background */
+  border-radius: 10px; /* More rounded corners */
+  border: var(--glass-border);
+  transition: var(--transition-ease);
 }
 
-.project-item-header h4 {
-  font-size: 1.1rem;
+.project-item-layout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.project-item-left {
+  flex: 1;
+}
+
+.project-name {
+  font-size: 1rem; /* Reduced font size */
   color: var(--text-color);
-}
-
-.meeting-count {
-  font-size: 0.9rem;
-  color: var(--text-light-color);
+  margin-bottom: 4px; /* Reduced margin */
 }
 
 .project-description {
-  font-size: 0.95rem;
+  font-size: 0.85rem; /* Smaller description */
   color: var(--text-light-color);
+  display: -webkit-box;
+  -webkit-line-clamp: 1; /* Limit to 1 line */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-item-center {
+  flex: 0 0 auto;
 }
 
 .project-date {
-  font-size: 0.85rem;
+  font-size: 0.8rem; /* Smaller date font */
   color: var(--text-light-color);
-  text-align: right;
+  white-space: nowrap; /* Prevent wrapping */
+}
+
+.project-item-right {
+  flex: 0 0 auto;
+}
+
+.meeting-count {
+  font-size: 0.85rem; /* Smaller meeting count */
+  color: var(--text-light-color);
+  background: rgba(255, 255, 255, 0.1); /* Added background for emphasis */
+  padding: 4px 8px; /* Small padding for badge-like appearance */
+  border-radius: 12px; /* Rounded badge style */
+}
+
+/* Hover effect for project items */
+.project-dashboard-list-item.project-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 /* Notifications */
@@ -489,20 +533,22 @@ body {
   font-size: 0.95rem;
   margin: 20px 0;
 }
+
 .add-item-button {
-    cursor: pointer;
-    color: var(--text-color-primary);
-    transition: color 0.2s ease;
+  cursor: pointer;
+  color: var(--text-color);
+  transition: color 0.2s ease;
 }
 
 .add-item-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .add-item-button:hover:not(:disabled) {
-    color: var(--button-hover-bg-color);
+  color: var(--accent-color);
 }
+
 /* Close icon */
 .close-icon {
   cursor: pointer;
@@ -602,6 +648,42 @@ body {
   .project-dashboard-middle-panel.form-active .project-dashboard-user-list-wrapper {
     padding-top: 200px;
   }
+
+  .project-dashboard-list-item {
+    padding: 6px 10px; /* Even more compact on smaller screens */
+    gap: 8px;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .user-list-name {
+    font-size: 0.9rem;
+  }
+
+  .user-list-email {
+    font-size: 0.8rem;
+  }
+
+  .project-name {
+    font-size: 0.95rem;
+  }
+
+  .project-description {
+    font-size: 0.8rem;
+  }
+
+  .project-date {
+    font-size: 0.75rem;
+  }
+
+  .meeting-count {
+    font-size: 0.8rem;
+    padding: 3px 6px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -612,18 +694,39 @@ body {
   }
 
   .project-dashboard-list-item {
-    padding: 10px;
+    padding: 5px 8px;
+    gap: 6px;
   }
 
   .user-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
   }
 
-  .user-list-name,
-  .user-list-email {
+  .user-list-name {
     font-size: 0.85rem;
+  }
+
+  .user-list-email {
+    font-size: 0.75rem;
+  }
+
+  .project-name {
+    font-size: 0.9rem;
+  }
+
+  .project-description {
+    font-size: 0.75rem;
+  }
+
+  .project-date {
+    font-size: 0.7rem;
+  }
+
+  .meeting-count {
+    font-size: 0.75rem;
+    padding: 2px 5px;
   }
 
   .nav-link {

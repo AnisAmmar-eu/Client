@@ -1,12 +1,17 @@
 // src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css'; // You can keep this minimal or empty, App.css handles most global styles
+import { BrowserRouter } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <GoogleOAuthProvider clientId="652814343534-cgiirl9338eduhukq2ba88mu12d7kjv1.apps.googleusercontent.com">
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   </React.StrictMode>
 );

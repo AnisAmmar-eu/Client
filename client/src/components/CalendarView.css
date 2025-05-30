@@ -1,149 +1,176 @@
 .calendar-container {
-    padding: 25px;
-    margin: 20px;
-    background: rgba(33, 47, 61, 0.2); /* Bleu pétrole transparent */
-    border-radius: 20px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(87, 117, 144, 0.3);
+    padding: 20px;
+    margin: 15px;
+    background: rgba(255, 255, 255, 0.1); /* Lighter transparent background */
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .calendar-title {
     display: flex;
     align-items: center;
-    color: #E1E8F0; /* Couleur claire pour le texte */
-    font-size: 1.8rem;
-    margin-bottom: 25px;
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    font-weight: 600;
+    color: #F5F5F5; /* Softer white for better contrast */
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-title i {
-    margin-right: 12px;
-    color: #93C5FD; /* Bleu clair pour l'icône */
-    font-size: 1.5rem;
+    margin-right: 10px;
+    color: #60A5FA; /* Vibrant blue for icon */
+    font-size: 1.4rem;
 }
 
 .error-message {
-    background: rgba(239, 68, 68, 0.1); /* Fond rouge transparent pour les erreurs */
-    color: #EF4444;
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    font-size: 0.9rem;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(220, 38, 38, 0.15); /* Softer red for errors */
+    color: #FCA5A5;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(220, 38, 38, 0.3);
 }
 
-/* Styles du calendrier */
+/* Calendar styles */
 .rbc-calendar {
     background: transparent;
-    color: #E1E8F0;
+    color: #F5F5F5;
     font-family: 'Inter', sans-serif;
 }
 
-/* Événements */
+/* Events */
 .rbc-event {
+    background: #3B82F6 !important; /* Bright blue for events */
     border: none !important;
-    padding: 6px !important;
+    padding: 5px !important;
+    border-radius: 4px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .rbc-event:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
 .rbc-event-label {
-    font-size: 0.85em;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
-/* Boutons de navigation */
+/* Navigation buttons */
 .rbc-btn-group button {
-    background: rgba(65, 90, 119, 0.25); /* Bleu pétrole léger */
-    color: #E1E8F0;
-    border: 1px solid rgba(87, 117, 144, 0.3);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
+    background: rgba(75, 85, 99, 0.2); /* Neutral gray for buttons */
+    color: #F5F5F5;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
 }
 
 .rbc-btn-group button:hover {
-    background: rgba(65, 90, 119, 0.5);
+    background: rgba(75, 85, 99, 0.4);
     color: #93C5FD;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .rbc-btn-group button:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.3);
+    box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.4);
 }
 
-/* Jour actuel */
+/* Current day */
 .rbc-today {
-    background: rgba(147, 197, 253, 0.15); /* Bleu clair subtil pour aujourd'hui */
+    background: rgba(59, 130, 246, 0.1); /* Subtle blue for today */
 }
 
-/* En-têtes des colonnes/jours */
+/* Column/day headers */
 .rbc-header {
-    padding: 12px !important;
-    font-weight: 600;
+    padding: 10px !important;
+    font-weight: 500;
     color: #93C5FD;
-    background: rgba(33, 47, 61, 0.3);
-    border-bottom: 1px solid rgba(87, 117, 144, 0.3) !important;
+    background: rgba(31, 41, 55, 0.3); /* Darker header background */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Vues (mois, semaine, jour, agenda) */
+/* Views (month, week, day, agenda) */
 .rbc-time-view,
 .rbc-month-view,
 .rbc-agenda-view {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(87, 117, 144, 0.3);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
 }
 
-/* Lignes de la grille */
+/* Time slot lines */
 .rbc-time-slot {
-    border-top: 1px solid rgba(87, 117, 144, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Événements dans la vue agenda */
+/* Agenda view table */
 .rbc-agenda-table {
-    color: #E1E8F0;
+    color: #F5F5F5;
+}
+.calendar-event {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 2px;
 }
 
+.calendar-event-title {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.calendar-event-link {
+    font-size: 12px;
+}
+
+.calendar-link {
+    color: #8585f6;
+    text-decoration: none;
+}
+
+.calendar-link:hover {
+    text-decoration: underline;
+    color: #a3a3ff;
+}
 .rbc-agenda-table th,
 .rbc-agenda-table td {
-    border: 1px solid rgba(87, 117, 144, 0.2);
-    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .calendar-container {
-        padding: 15px;
-        margin: 10px;
+        padding: 12px;
+        margin: 8px;
     }
 
     .calendar-title {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
 
     .calendar-title i {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
 
     .rbc-calendar {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
 
     .rbc-btn-group button {
-        padding: 6px 10px;
-        font-size: 0.85rem;
+        padding: 5px 8px;
+        font-size: 0.8rem;
     }
 
     .rbc-event {
-        padding: 4px !important;
+        padding: 3px !important;
     }
 }
